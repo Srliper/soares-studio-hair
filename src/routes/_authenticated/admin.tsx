@@ -47,7 +47,7 @@ function AdminPage() {
 
   const isAdmin = !!access?.isAdmin;
   const professionalId = access?.professionalId ?? null;
-  if (!isAdmin && !professionalId) return <NotAdminScreen onSignOut={signOut} />;
+  if (!isAdmin && !professionalId) return <ClaimIdentityScreen onSignOut={signOut} />;
 
   return (
     <div className="min-h-screen">
@@ -69,33 +69,143 @@ function AdminPage() {
           <TabsList>
             {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
+            {isAdmin && <TabsTrigger value="codes"><ShieldAlert className="h-4 w-4 mr-1" /> Códigos de vínculo</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
+          {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>
   );
 }
 
-function NotAdminScreen({ onSignOut }: { onSignOut: () => void }) {
+function ClaimIdentityScreen({ onSignOut }: { onSignOut: () => void }) {
+  const qc = useQueryClient();
+  const [code, setCode] = useState("");
+  const claim = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("claim_professional", { _code: code.trim() });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      toast.success("Conta vinculada! Bem-vindo(a).");
+      qc.invalidateQueries({ queryKey: ["admin-access"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Não foi possível vincular"),
+  });
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <Card className="max-w-md p-8 text-center border-primary/30">
+      <Card className="max-w-md w-full p-8 border-primary/30">
         <ShieldAlert className="mx-auto h-10 w-10 text-primary" />
-        <h1 className="mt-4 font-display text-2xl">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sua conta ainda não tem permissão de administrador. Peça a um admin existente para liberar seu acesso.
+        <h1 className="mt-4 font-display text-2xl text-center">Vincular minha identidade</h1>
+        <p className="mt-2 text-sm text-muted-foreground text-center">
+          Digite o <strong className="text-foreground">código de vínculo</strong> que o administrador te passou para associar esta conta ao seu perfil profissional.
         </p>
+        <div className="mt-6 space-y-3">
+          <Label>Código de vínculo</Label>
+          <Input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Ex: A1B2C3D4"
+            className="text-center tracking-[0.3em] font-mono text-lg"
+            maxLength={16}
+          />
+          <Button
+            className="w-full"
+            onClick={() => claim.mutate()}
+            disabled={!code.trim() || claim.isPending}
+          >
+            {claim.isPending ? "Vinculando…" : "Vincular minha conta"}
+          </Button>
+        </div>
         <div className="mt-6 flex gap-2 justify-center">
-          <Link to="/"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-1" /> Início</Button></Link>
-          <Button onClick={onSignOut} variant="ghost">Sair</Button>
+          <Link to="/"><Button variant="outline" size="sm"><ArrowLeft className="h-4 w-4 mr-1" /> Início</Button></Link>
+          <Button onClick={onSignOut} variant="ghost" size="sm">Sair</Button>
         </div>
         <div className="mt-6 rounded-md border border-border p-3 text-left text-xs text-muted-foreground">
-          <strong className="text-foreground">Primeiro acesso?</strong>
-          <p className="mt-1">Após criar sua conta, o primeiro admin precisa ser cadastrado pelo painel do Lovable Cloud na tabela <code className="text-primary">user_roles</code> com o valor <code className="text-primary">admin</code>.</p>
+          <strong className="text-foreground">Sem código?</strong>
+          <p className="mt-1">Peça ao administrador para abrir <em>Painel Admin → Códigos de vínculo</em> e enviar o código do seu perfil.</p>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function ClaimCodesPanel() {
+  const qc = useQueryClient();
+  const { data: pros, isLoading } = useQuery({
+    queryKey: ["pros-claim-codes"],
+    queryFn: async () => (await supabase.from("professionals").select("id, name, role_title, claim_code, user_id").order("name")).data ?? [],
+  });
+
+  const regen = useMutation({
+    mutationFn: async (id: string) => {
+      const newCode = Array.from({ length: 8 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+      const { error } = await supabase.from("professionals").update({ claim_code: newCode }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Novo código gerado"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const unlink = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("professionals").update({ user_id: null }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Vínculo removido"); },
+  });
+
+  return (
+    <div className="mt-6 space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Cada profissional entra em <code className="text-primary">/admin</code> com a conta dele e digita o código abaixo para se vincular automaticamente ao próprio perfil.
+      </p>
+      {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      <div className="grid gap-3 md:grid-cols-2">
+        {pros?.map((p: any) => (
+          <Card key={p.id} className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-display text-lg">{p.name}</div>
+                <div className="text-xs uppercase tracking-widest text-primary/80">{p.role_title}</div>
+              </div>
+              {p.user_id ? (
+                <Badge variant="outline" className="border-green-500/40 text-green-300">Vinculado</Badge>
+              ) : (
+                <Badge variant="outline" className="border-yellow-500/40 text-yellow-300">Aguardando</Badge>
+              )}
+            </div>
+            <div className="mt-4">
+              <Label className="text-xs">Código de vínculo</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-2 font-mono tracking-[0.25em] text-center">
+                  {p.claim_code ?? "—"}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { navigator.clipboard.writeText(p.claim_code ?? ""); toast.success("Copiado"); }}
+                  disabled={!p.claim_code}
+                >Copiar</Button>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { if (confirm("Gerar novo código? O anterior deixa de funcionar.")) regen.mutate(p.id); }}>
+                Gerar novo
+              </Button>
+              {p.user_id && (
+                <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover vínculo? A conta atual perderá acesso a este perfil.")) unlink.mutate(p.id); }}>
+                  Desvincular
+                </Button>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

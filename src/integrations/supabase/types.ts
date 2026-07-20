@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           active: boolean
           bio: string | null
+          claim_code: string | null
           created_at: string
           id: string
           name: string
@@ -84,6 +85,7 @@ export type Database = {
         Insert: {
           active?: boolean
           bio?: string | null
+          claim_code?: string | null
           created_at?: string
           id?: string
           name: string
@@ -96,6 +98,7 @@ export type Database = {
         Update: {
           active?: boolean
           bio?: string | null
+          claim_code?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -192,6 +195,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_professional: { Args: { _code: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
