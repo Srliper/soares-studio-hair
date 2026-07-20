@@ -15,16 +15,14 @@ import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
 import pillarHair from "@/assets/pillar-hair.jpg";
 import pillarNails from "@/assets/pillar-nails.jpg";
-import pillarWeddingAsset from "@/assets/pillar-casamentos.png.asset.json";
-import pillarBarberAsset from "@/assets/pillar-barber.jpg.asset.json";
-import afonsoAsset from "@/assets/afonso-real.png.asset.json";
-import duoAsset from "@/assets/afonso-alexia.png.asset.json";
-// Swap: pillar wedding/barber images are used for the collaborators section,
-// and the previous collaborator photos are used in the Casamentos/Barber pillars.
-const pillarWedding = afonsoAsset.url;
-const pillarBarber = duoAsset.url;
-const afonsoImg = pillarBarberAsset.url;
-const alexiaImg = pillarWeddingAsset.url;
+import pillarWeddingNewAsset from "@/assets/pillar-casamentos-new.jpg.asset.json";
+import pillarBarberNewAsset from "@/assets/pillar-barber-new.jpg.asset.json";
+import collabAlexiaAsset from "@/assets/pillar-casamentos.png.asset.json";
+import collabAfonsoAsset from "@/assets/pillar-barber.jpg.asset.json";
+const pillarWedding = pillarWeddingNewAsset.url;
+const pillarBarber = pillarBarberNewAsset.url;
+const afonsoImg = collabAfonsoAsset.url;
+const alexiaImg = collabAlexiaAsset.url;
 
 export const Route = createFileRoute("/")({ component: Home });
 
