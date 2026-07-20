@@ -553,7 +553,7 @@ function Footer() {
           Sinta a <span className="italic gold-gradient">exclusividade.</span>
         </h2>
         <p className="mt-4 text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Sorocaba e Região <span className="text-primary/60 mx-2">•</span> Atendimento personalizado
+          São Miguel Arcanjo e Região <span className="text-primary/60 mx-2">•</span> Atendimento personalizado
         </p>
         <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 text-sm">
           <div className="flex items-center gap-3">
