@@ -45,19 +45,34 @@ export function AIChatFloat() {
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { reply?: string; error?: string };
-      const reply =
-        data.reply ??
-        data.error ??
-        "Não consegui responder agora. Tente novamente ou fale no WhatsApp.";
-      setMessages([...next, { role: "assistant", content: reply }]);
+
+      if (!res.ok || !res.body) {
+        const errText = (await res.text().catch(() => "")) || "Não consegui responder agora. Fale no WhatsApp.";
+        setMessages([...next, { role: "assistant", content: errText }]);
+        return;
+      }
+
+      // Adiciona bolha vazia e vai preenchendo enquanto os tokens chegam
+      setMessages([...next, { role: "assistant", content: "" }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setMessages([...next, { role: "assistant", content: acc }]);
+      }
+      if (!acc) {
+        setMessages([
+          ...next,
+          { role: "assistant", content: "Não consegui responder agora. Fale no WhatsApp." },
+        ]);
+      }
     } catch {
       setMessages([
         ...next,
-        {
-          role: "assistant",
-          content: "Falha de conexão. Tente novamente em instantes.",
-        },
+        { role: "assistant", content: "Falha de conexão. Tente novamente em instantes." },
       ]);
     } finally {
       setLoading(false);

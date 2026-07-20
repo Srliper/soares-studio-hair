@@ -67,21 +67,63 @@ Como atender:
           body: JSON.stringify({
             model: "google/gemini-2.5-flash",
             messages: [{ role: "system", content: system }, ...messages],
+            stream: true,
           }),
         });
 
         if (!res.ok) {
           const text = await res.text();
-          if (res.status === 429) return Response.json({ error: "Muitas mensagens agora. Tente em instantes." }, { status: 429 });
-          if (res.status === 402) return Response.json({ error: "Créditos de IA esgotados. Fale no WhatsApp." }, { status: 402 });
-          return Response.json({ error: text || "Erro na IA" }, { status: 500 });
+          if (res.status === 429) return new Response("Muitas mensagens agora. Tente em instantes.", { status: 429 });
+          if (res.status === 402) return new Response("Créditos de IA esgotados. Fale no WhatsApp.", { status: 402 });
+          return new Response(text || "Erro na IA", { status: 500 });
         }
 
-        const data = (await res.json()) as {
-          choices?: { message?: { content?: string } }[];
-        };
-        const reply = data.choices?.[0]?.message?.content ?? "Desculpe, não consegui responder agora.";
-        return Response.json({ reply });
+        if (!res.body) return new Response("Empty stream", { status: 500 });
+
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const reader = res.body!.getReader();
+            const decoder = new TextDecoder();
+            const encoder = new TextEncoder();
+            let buffer = "";
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let idx: number;
+                while ((idx = buffer.indexOf("\n")) !== -1) {
+                  const line = buffer.slice(0, idx).trim();
+                  buffer = buffer.slice(idx + 1);
+                  if (!line.startsWith("data:")) continue;
+                  const payload = line.slice(5).trim();
+                  if (payload === "[DONE]") continue;
+                  try {
+                    const json = JSON.parse(payload) as {
+                      choices?: { delta?: { content?: string } }[];
+                    };
+                    const delta = json.choices?.[0]?.delta?.content;
+                    if (delta) controller.enqueue(encoder.encode(delta));
+                  } catch {
+                    /* skip malformed chunk */
+                  }
+                }
+              }
+            } catch (e) {
+              controller.error(e);
+              return;
+            }
+            controller.close();
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+          },
+        });
       },
     },
   },
