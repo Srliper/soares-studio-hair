@@ -68,11 +68,33 @@ export type Database = {
           },
         ]
       }
+      claim_attempts: {
+        Row: {
+          attempts: number
+          locked_until: string | null
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          locked_until?: string | null
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          locked_until?: string | null
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       professionals: {
         Row: {
           active: boolean
           bio: string | null
           claim_code: string | null
+          claim_code_expires_at: string | null
           created_at: string
           id: string
           name: string
@@ -86,6 +108,7 @@ export type Database = {
           active?: boolean
           bio?: string | null
           claim_code?: string | null
+          claim_code_expires_at?: string | null
           created_at?: string
           id?: string
           name: string
@@ -99,6 +122,7 @@ export type Database = {
           active?: boolean
           bio?: string | null
           claim_code?: string | null
+          claim_code_expires_at?: string | null
           created_at?: string
           id?: string
           name?: string

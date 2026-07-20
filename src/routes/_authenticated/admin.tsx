@@ -138,17 +138,27 @@ function ClaimCodesPanel() {
   const qc = useQueryClient();
   const { data: pros, isLoading } = useQuery({
     queryKey: ["pros-claim-codes"],
-    queryFn: async () => (await supabase.from("professionals").select("id, name, role_title, claim_code, user_id").order("name")).data ?? [],
+    queryFn: async () => (await supabase.from("professionals").select("id, name, role_title, claim_code, claim_code_expires_at, user_id").order("name")).data ?? [],
+    refetchInterval: 30_000,
   });
 
   const regen = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, hours }: { id: string; hours: number }) => {
       const newCode = Array.from({ length: 8 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
-      const { error } = await supabase.from("professionals").update({ claim_code: newCode }).eq("id", id);
+      const expires = new Date(Date.now() + hours * 3600_000).toISOString();
+      const { error } = await supabase.from("professionals").update({ claim_code: newCode, claim_code_expires_at: expires }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Novo código gerado"); },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const revoke = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("professionals").update({ claim_code_expires_at: new Date(0).toISOString() }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Código revogado"); },
   });
 
   const unlink = useMutation({
@@ -159,52 +169,85 @@ function ClaimCodesPanel() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Vínculo removido"); },
   });
 
+  const codeStatus = (p: any): { label: string; className: string; expired: boolean } => {
+    if (p.user_id) return { label: "Vinculado", className: "border-green-500/40 text-green-300", expired: false };
+    if (!p.claim_code_expires_at) return { label: "Sem validade", className: "border-muted-foreground/40 text-muted-foreground", expired: false };
+    const exp = new Date(p.claim_code_expires_at).getTime();
+    if (exp <= Date.now()) return { label: "Expirado", className: "border-red-500/40 text-red-300", expired: true };
+    return { label: "Válido", className: "border-yellow-500/40 text-yellow-300", expired: false };
+  };
+
+  const fmtExpiry = (iso: string | null): string => {
+    if (!iso) return "";
+    const ms = new Date(iso).getTime() - Date.now();
+    if (ms <= 0) return "expirado";
+    const h = Math.floor(ms / 3600_000);
+    const m = Math.floor((ms % 3600_000) / 60_000);
+    if (h >= 24) return `expira em ${Math.floor(h / 24)}d ${h % 24}h`;
+    if (h > 0) return `expira em ${h}h ${m}m`;
+    return `expira em ${m}m`;
+  };
+
   return (
     <div className="mt-6 space-y-4">
       <p className="text-sm text-muted-foreground">
         Cada profissional entra em <code className="text-primary">/admin</code> com a conta dele e digita o código abaixo para se vincular automaticamente ao próprio perfil.
+        Códigos têm <strong>validade</strong> e cada conta pode tentar no máximo <strong>5 códigos a cada 15 min</strong> antes de ficar bloqueada por 1h.
       </p>
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       <div className="grid gap-3 md:grid-cols-2">
-        {pros?.map((p: any) => (
+        {pros?.map((p: any) => {
+          const s = codeStatus(p);
+          return (
           <Card key={p.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-display text-lg">{p.name}</div>
                 <div className="text-xs uppercase tracking-widest text-primary/80">{p.role_title}</div>
               </div>
-              {p.user_id ? (
-                <Badge variant="outline" className="border-green-500/40 text-green-300">Vinculado</Badge>
-              ) : (
-                <Badge variant="outline" className="border-yellow-500/40 text-yellow-300">Aguardando</Badge>
-              )}
+              <Badge variant="outline" className={s.className}>{s.label}</Badge>
             </div>
-            <div className="mt-4">
-              <Label className="text-xs">Código de vínculo</Label>
-              <div className="mt-1 flex items-center gap-2">
-                <code className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-2 font-mono tracking-[0.25em] text-center">
-                  {p.claim_code ?? "—"}
-                </code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { navigator.clipboard.writeText(p.claim_code ?? ""); toast.success("Copiado"); }}
-                  disabled={!p.claim_code}
-                >Copiar</Button>
-              </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <Button size="sm" variant="ghost" onClick={() => { if (confirm("Gerar novo código? O anterior deixa de funcionar.")) regen.mutate(p.id); }}>
-                Gerar novo
-              </Button>
-              {p.user_id && (
+            {!p.user_id && (
+              <>
+                <div className="mt-4">
+                  <Label className="text-xs">Código de vínculo</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className={`flex-1 rounded-md border px-3 py-2 font-mono tracking-[0.25em] text-center ${s.expired ? "border-red-500/40 bg-red-500/5 text-red-300 line-through" : "border-border bg-muted/30"}`}>
+                      {p.claim_code ?? "—"}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { navigator.clipboard.writeText(p.claim_code ?? ""); toast.success("Copiado"); }}
+                      disabled={!p.claim_code || s.expired}
+                    >Copiar</Button>
+                  </div>
+                  {p.claim_code_expires_at && (
+                    <div className={`mt-1 text-xs ${s.expired ? "text-red-300" : "text-muted-foreground"}`}>
+                      {fmtExpiry(p.claim_code_expires_at)}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => regen.mutate({ id: p.id, hours: 1 })}>Gerar (1h)</Button>
+                  <Button size="sm" variant="outline" onClick={() => regen.mutate({ id: p.id, hours: 24 })}>Gerar (24h)</Button>
+                  <Button size="sm" variant="outline" onClick={() => regen.mutate({ id: p.id, hours: 168 })}>Gerar (7d)</Button>
+                  {!s.expired && p.claim_code && (
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Revogar código agora?")) revoke.mutate(p.id); }}>Revogar</Button>
+                  )}
+                </div>
+              </>
+            )}
+            {p.user_id && (
+              <div className="mt-3">
                 <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover vínculo? A conta atual perderá acesso a este perfil.")) unlink.mutate(p.id); }}>
                   Desvincular
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
