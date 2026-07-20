@@ -570,6 +570,32 @@ function Footer() {
             </a>
           </div>
         </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-[1fr_1.2fr] items-center max-w-3xl mx-auto text-left">
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Endereço</span>
+            <p className="mt-2 text-foreground">R. Cel. Fernando Prestes, 622</p>
+            <p className="text-muted-foreground text-sm">Centro — Sorocaba, SP</p>
+            <a
+              href="https://maps.app.goo.gl/vBNDp2VYR9oXP9ti9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 text-xs uppercase tracking-[0.3em] text-primary hover:text-primary/80 underline underline-offset-4"
+            >
+              Como chegar →
+            </a>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-border/50 aspect-video">
+            <iframe
+              title="Localização Studio Soares"
+              src="https://www.google.com/maps?q=R.+Cel.+Fernando+Prestes,+622+-+Centro,+Sorocaba+-+SP&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
       </div>
       <div className="border-t border-border/50 py-6 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
         © {new Date().getFullYear()} Studio Soares Hair Afonso — Todos os direitos reservados.
