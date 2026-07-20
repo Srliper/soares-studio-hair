@@ -77,6 +77,7 @@ export type Database = {
           name: string
           role_title: string
           slug: string
+          user_id: string | null
           work_end: string
           work_start: string
         }
@@ -88,6 +89,7 @@ export type Database = {
           name: string
           role_title: string
           slug: string
+          user_id?: string | null
           work_end?: string
           work_start?: string
         }
@@ -99,6 +101,7 @@ export type Database = {
           name?: string
           role_title?: string
           slug?: string
+          user_id?: string | null
           work_end?: string
           work_start?: string
         }
@@ -196,9 +199,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      owns_professional: { Args: { _prof_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "profissional"
       appointment_status: "pendente" | "confirmado" | "concluido" | "cancelado"
       service_category:
         | "masculino"
@@ -334,7 +338,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "profissional"],
       appointment_status: ["pendente", "confirmado", "concluido", "cancelado"],
       service_category: [
         "masculino",
