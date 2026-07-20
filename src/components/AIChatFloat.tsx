@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -19,6 +19,7 @@ export function AIChatFloat() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -30,6 +31,10 @@ export function AIChatFloat() {
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/auth")) return null;
 
+  function stop() {
+    abortRef.current?.abort();
+  }
+
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
@@ -37,6 +42,8 @@ export function AIChatFloat() {
     setMessages(next);
     setInput("");
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -44,6 +51,7 @@ export function AIChatFloat() {
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
+        signal: ctrl.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -63,18 +71,33 @@ export function AIChatFloat() {
         acc += decoder.decode(value, { stream: true });
         setMessages([...next, { role: "assistant", content: acc }]);
       }
-      if (!acc) {
+      if (!acc && !ctrl.signal.aborted) {
         setMessages([
           ...next,
           { role: "assistant", content: "Não consegui responder agora. Fale no WhatsApp." },
         ]);
+      } else if (ctrl.signal.aborted && acc) {
+        setMessages([
+          ...next,
+          { role: "assistant", content: `${acc}\n\n_Interrompido._` },
+        ]);
+      } else if (ctrl.signal.aborted) {
+        setMessages([
+          ...next,
+          { role: "assistant", content: "_Interrompido._" },
+        ]);
       }
-    } catch {
-      setMessages([
-        ...next,
-        { role: "assistant", content: "Falha de conexão. Tente novamente em instantes." },
-      ]);
+    } catch (e: any) {
+      if (e?.name === "AbortError" || ctrl.signal.aborted) {
+        // já tratado acima; mantém o que foi acumulado
+      } else {
+        setMessages([
+          ...next,
+          { role: "assistant", content: "Falha de conexão. Tente novamente em instantes." },
+        ]);
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
     }
   }
@@ -142,14 +165,26 @@ export function AIChatFloat() {
               disabled={loading}
               className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              aria-label="Enviar"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            {loading ? (
+              <button
+                type="button"
+                onClick={stop}
+                aria-label="Parar geração"
+                title="Parar"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive text-destructive-foreground transition hover:opacity-90"
+              >
+                <Square className="h-3.5 w-3.5 fill-current" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                aria-label="Enviar"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            )}
           </form>
         </div>
       )}
