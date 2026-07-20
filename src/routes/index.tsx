@@ -15,9 +15,12 @@ import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
 import pillarHair from "@/assets/pillar-hair.jpg";
 import pillarNails from "@/assets/pillar-nails.jpg";
-import pillarWedding from "@/assets/pillar-wedding.jpg";
+import pillarWeddingAsset from "@/assets/pillar-casamentos.png.asset.json";
+import pillarBarberAsset from "@/assets/pillar-barber.jpg.asset.json";
 import afonsoAsset from "@/assets/afonso-real.png.asset.json";
 import duoAsset from "@/assets/afonso-alexia.png.asset.json";
+const pillarWedding = pillarWeddingAsset.url;
+const pillarBarber = pillarBarberAsset.url;
 const afonsoImg = afonsoAsset.url;
 const alexiaImg = duoAsset.url;
 
@@ -98,7 +101,17 @@ function Home() {
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
-          {step === 0 && <Pillars />}
+          {step === 0 && (
+            <Pillars
+              onPickPro={(p) => {
+                setPro(p);
+                setStep(2);
+                queueMicrotask(() => {
+                  document.getElementById("agendar")?.scrollIntoView({ behavior: "smooth" });
+                });
+              }}
+            />
+          )}
           {step === 0 && <Collaborators />}
           <section id="agendar" className="mx-auto max-w-5xl px-4 pb-24">
             <div className="mb-8 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
@@ -199,24 +212,46 @@ function Hero({ onStart }: { onStart: () => void }) {
   );
 }
 
-function Pillars() {
-  const items = [
-    { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima." },
-    { title: "Manicure & Maquiagem", img: pillarNails, body: "Alexia Soares traz delicadeza e precisão para suas unhas — e assina maquiagens social, festa e noiva com o mesmo cuidado." },
-    { title: "Casamentos & Barber", img: pillarWedding, body: "O dia da noiva completo e atendimento premium para o público masculino. Excelência para todos os momentos." },
+function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
+  const { data: pros } = useProfessionals();
+  const findBySlug = (slug: string) => pros?.find((p) => p.slug === slug);
+  const items: { title: string; img: string; body: string; slug: string }[] = [
+    { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima.", slug: "afonso" },
+    { title: "Manicure & Maquiagem", img: pillarNails, body: "Alexia Soares traz delicadeza e precisão para suas unhas — e assina maquiagens social, festa e noiva com o mesmo cuidado.", slug: "alexia" },
+    { title: "Casamentos", img: pillarWedding, body: "O dia da noiva completo — cabelo, maquiagem e cuidado nos detalhes, assinado por Alexia Soares.", slug: "alexia" },
+    { title: "Barber", img: pillarBarber, body: "Atendimento premium para o público masculino: cortes clássicos, modernos e barba com a assinatura do Afonso.", slug: "afonso" },
   ];
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24">
-      <div className="grid gap-10 md:grid-cols-3">
-        {items.map((it) => (
-          <motion.div key={it.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <div className="aspect-square w-full overflow-hidden gold-border rounded-sm">
-              <img src={it.img} alt={it.title} loading="lazy" width={900} height={900} className="h-full w-full object-cover" />
-            </div>
-            <h3 className="mt-6 font-display text-2xl gold-gradient">{it.title}</h3>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{it.body}</p>
-          </motion.div>
-        ))}
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((it) => {
+          const pro = findBySlug(it.slug);
+          const disabled = !pro;
+          return (
+            <motion.button
+              key={it.title}
+              type="button"
+              disabled={disabled}
+              onClick={() => pro && onPickPro(pro)}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -4 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="group text-left disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label={`Agendar ${it.title} com ${pro?.name ?? ""}`}
+            >
+              <div className="aspect-square w-full overflow-hidden gold-border rounded-sm">
+                <img src={it.img} alt={it.title} loading="lazy" width={900} height={900} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              </div>
+              <h3 className="mt-6 font-display text-2xl gold-gradient">{it.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{it.body}</p>
+              <div className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/80 group-hover:text-primary">
+                Agendar <ChevronRight className="h-3 w-3" />
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </section>
   );
