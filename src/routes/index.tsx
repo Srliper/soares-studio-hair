@@ -19,10 +19,12 @@ import pillarWeddingAsset from "@/assets/pillar-casamentos.png.asset.json";
 import pillarBarberAsset from "@/assets/pillar-barber.jpg.asset.json";
 import afonsoAsset from "@/assets/afonso-real.png.asset.json";
 import duoAsset from "@/assets/afonso-alexia.png.asset.json";
-const pillarWedding = pillarWeddingAsset.url;
-const pillarBarber = pillarBarberAsset.url;
-const afonsoImg = afonsoAsset.url;
-const alexiaImg = duoAsset.url;
+// Swap: pillar wedding/barber images are used for the collaborators section,
+// and the previous collaborator photos are used in the Casamentos/Barber pillars.
+const pillarWedding = afonsoAsset.url;
+const pillarBarber = duoAsset.url;
+const afonsoImg = pillarBarberAsset.url;
+const alexiaImg = pillarWeddingAsset.url;
 
 export const Route = createFileRoute("/")({ component: Home });
 
