@@ -1,7 +1,21 @@
 import { useRouterState } from "@tanstack/react-router";
 
-const PHONE = "5515998343669";
-const MESSAGE = "Olá! Vim pelo site do Studio Soares e gostaria de mais informações.";
+// Configurable via env vars (client-side, so VITE_ prefix + public bundle).
+// Set in .env.local — never commit real customer data to .env (auto-generated).
+const DEFAULT_PHONE = "5515998343669";
+const DEFAULT_MESSAGE =
+  "Olá! Vim pelo site do Studio Soares e gostaria de mais informações.";
+
+// Accept common formats ("+55 15 99834-3669", "(15) 99834-3669", etc.) and
+// normalize to digits — wa.me requires digits only, with country code.
+function normalizePhone(raw: string | undefined): string {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  return digits || DEFAULT_PHONE;
+}
+
+const PHONE = normalizePhone(import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined);
+const MESSAGE =
+  (import.meta.env.VITE_WHATSAPP_MESSAGE as string | undefined)?.trim() || DEFAULT_MESSAGE;
 
 export function WhatsAppFloat() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
