@@ -144,29 +144,39 @@ function ClaimCodesPanel() {
 
   const regen = useMutation({
     mutationFn: async ({ id, hours }: { id: string; hours: number }) => {
-      const newCode = Array.from({ length: 8 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
-      const expires = new Date(Date.now() + hours * 3600_000).toISOString();
-      const { error } = await supabase.from("professionals").update({ claim_code: newCode, claim_code_expires_at: expires }).eq("id", id);
+      const { error } = await supabase.rpc("admin_regenerate_claim_code", { _pro_id: id, _hours: hours });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Novo código gerado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-claim-codes"] });
+      qc.invalidateQueries({ queryKey: ["claim-audit"] });
+      toast.success("Novo código gerado");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
   const revoke = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("professionals").update({ claim_code_expires_at: new Date(0).toISOString() }).eq("id", id);
+      const { error } = await supabase.rpc("admin_revoke_claim_code", { _pro_id: id });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Código revogado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-claim-codes"] });
+      qc.invalidateQueries({ queryKey: ["claim-audit"] });
+      toast.success("Código revogado");
+    },
   });
 
   const unlink = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("professionals").update({ user_id: null }).eq("id", id);
+      const { error } = await supabase.rpc("admin_unlink_professional", { _pro_id: id });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-claim-codes"] }); toast.success("Vínculo removido"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-claim-codes"] });
+      qc.invalidateQueries({ queryKey: ["claim-audit"] });
+      toast.success("Vínculo removido");
+    },
   });
 
   const codeStatus = (p: any): { label: string; className: string; expired: boolean } => {
@@ -246,6 +256,66 @@ function ClaimCodesPanel() {
               </div>
             )}
           </Card>
+          );
+        })}
+      </div>
+      <ClaimAuditLog />
+    </div>
+  );
+}
+
+function ClaimAuditLog() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["claim-audit"],
+    queryFn: async () => (await supabase
+      .from("claim_audit")
+      .select("id, at, actor_user_id, professional_name, event, detail")
+      .order("at", { ascending: false })
+      .limit(100)).data ?? [],
+    refetchInterval: 15_000,
+  });
+
+  const eventMeta: Record<string, { label: string; className: string }> = {
+    claim_success:         { label: "Vínculo concluído", className: "border-green-500/40 text-green-300" },
+    code_generated:        { label: "Código gerado",     className: "border-primary/40 text-primary" },
+    code_revoked:          { label: "Código revogado",   className: "border-orange-500/40 text-orange-300" },
+    unlinked:              { label: "Desvinculado",      className: "border-orange-500/40 text-orange-300" },
+    attempt_fail:          { label: "Tentativa inválida",className: "border-yellow-500/40 text-yellow-300" },
+    attempt_blocked:       { label: "Tentativa bloqueada",className: "border-red-500/40 text-red-300" },
+    attempt_already_linked:{ label: "Conta já vinculada",className: "border-muted-foreground/40 text-muted-foreground" },
+    lockout:               { label: "Bloqueio 1h",        className: "border-red-500/40 text-red-300" },
+  };
+
+  const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+
+  return (
+    <div className="pt-6 border-t border-border/50">
+      <div className="mb-3">
+        <div className="font-display text-xl">Auditoria</div>
+        <div className="text-xs text-muted-foreground">Últimos 100 eventos — tentativas, expirações, bloqueios e vínculos.</div>
+      </div>
+      {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum evento registrado ainda.</p>}
+      <div className="space-y-1">
+        {data?.map((e: any) => {
+          const meta = eventMeta[e.event] ?? { label: e.event, className: "border-border text-muted-foreground" };
+          return (
+            <div key={e.id} className="flex flex-wrap items-start gap-3 rounded-md border border-border/50 px-3 py-2 text-sm">
+              <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">{fmt(e.at)}</span>
+              <Badge variant="outline" className={`${meta.className} whitespace-nowrap`}>{meta.label}</Badge>
+              <span className="flex-1 min-w-[200px]">
+                {e.professional_name && <strong className="text-foreground">{e.professional_name}</strong>}
+                {e.professional_name && e.detail && " — "}
+                <span className="text-muted-foreground">{e.detail}</span>
+              </span>
+              {e.actor_user_id && (
+                <code className="text-[10px] text-muted-foreground/60 font-mono" title={e.actor_user_id}>
+                  {String(e.actor_user_id).slice(0, 8)}…
+                </code>
+              )}
+            </div>
           );
         })}
       </div>

@@ -89,6 +89,44 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_audit: {
+        Row: {
+          actor_user_id: string | null
+          at: string
+          detail: string | null
+          event: string
+          id: string
+          professional_id: string | null
+          professional_name: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          at?: string
+          detail?: string | null
+          event: string
+          id?: string
+          professional_id?: string | null
+          professional_name?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          at?: string
+          detail?: string | null
+          event?: string
+          id?: string
+          professional_id?: string | null
+          professional_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_audit_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professionals: {
         Row: {
           active: boolean
@@ -219,6 +257,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_regenerate_claim_code: {
+        Args: { _hours: number; _pro_id: string }
+        Returns: string
+      }
+      admin_revoke_claim_code: { Args: { _pro_id: string }; Returns: undefined }
+      admin_unlink_professional: {
+        Args: { _pro_id: string }
+        Returns: undefined
+      }
       claim_professional: { Args: { _code: string }; Returns: string }
       has_role: {
         Args: {
