@@ -60,7 +60,7 @@ export const Route = createFileRoute("/")({
               closes: "19:00",
             },
           ],
-cyril:          priceRange: "$$",
+          priceRange: "$$",
         }),
       },
     ],
