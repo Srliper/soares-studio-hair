@@ -553,7 +553,7 @@ function Footer() {
           Sinta a <span className="italic gold-gradient">exclusividade.</span>
         </h2>
         <p className="mt-4 text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Sorocaba e Região <span className="text-primary/60 mx-2">•</span> Atendimento personalizado
+          São Miguel Arcanjo e Região <span className="text-primary/60 mx-2">•</span> Atendimento personalizado
         </p>
         <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 text-sm">
           <div className="flex items-center gap-3">
@@ -574,7 +574,7 @@ function Footer() {
           <div>
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Endereço</span>
             <p className="mt-2 text-foreground">R. Cel. Fernando Prestes, 622</p>
-            <p className="text-muted-foreground text-sm">Centro — Sorocaba, SP</p>
+            <p className="text-muted-foreground text-sm">Centro — São Miguel Arcanjo, SP</p>
             <a
               href="https://maps.app.goo.gl/vBNDp2VYR9oXP9ti9"
               target="_blank"
@@ -587,7 +587,7 @@ function Footer() {
           <div className="overflow-hidden rounded-lg border border-border/50 aspect-video">
             <iframe
               title="Localização Studio Soares"
-              src="https://www.google.com/maps?q=R.+Cel.+Fernando+Prestes,+622+-+Centro,+Sorocaba+-+SP&output=embed"
+              src="https://www.google.com/maps?q=R.+Cel.+Fernando+Prestes,+622+-+Centro,+S%C3%A3o+Miguel+Arcanjo+-+SP&output=embed"
               width="100%"
               height="100%"
               style={{ border: 0 }}
