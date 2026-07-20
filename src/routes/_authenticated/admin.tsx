@@ -16,20 +16,23 @@ import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, Sh
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
-function useIsAdmin() {
+function useAccess() {
   return useQuery({
-    queryKey: ["is-admin"],
+    queryKey: ["admin-access"],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return false;
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.user.id).eq("role", "admin").maybeSingle();
-      return !!data;
+      if (!user.user) return { isAdmin: false, professionalId: null as string | null };
+      const [{ data: adminRow }, { data: proRow }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", user.user.id).eq("role", "admin").maybeSingle(),
+        supabase.from("professionals").select("id").eq("user_id", user.user.id).maybeSingle(),
+      ]);
+      return { isAdmin: !!adminRow, professionalId: proRow?.id ?? null };
     },
   });
 }
 
 function AdminPage() {
-  const { data: isAdmin, isLoading } = useIsAdmin();
+  const { data: access, isLoading } = useAccess();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -42,14 +45,16 @@ function AdminPage() {
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Carregando…</div>;
 
-  if (!isAdmin) return <NotAdminScreen onSignOut={signOut} />;
+  const isAdmin = !!access?.isAdmin;
+  const professionalId = access?.professionalId ?? null;
+  if (!isAdmin && !professionalId) return <NotAdminScreen onSignOut={signOut} />;
 
   return (
     <div className="min-h-screen">
       <header className="border-b border-border/50 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div>
-            <div className="font-display text-xl gold-gradient">Painel Admin</div>
+            <div className="font-display text-xl gold-gradient">{isAdmin ? "Painel Admin" : "Meu Painel"}</div>
             <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Ateliê A&A</div>
           </div>
           <div className="flex items-center gap-2">
@@ -60,13 +65,13 @@ function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <Tabs defaultValue="appointments">
+        <Tabs defaultValue={isAdmin ? "appointments" : "services"}>
           <TabsList>
-            <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>
+            {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
           </TabsList>
-          <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>
-          <TabsContent value="services"><ServicesPanel /></TabsContent>
+          {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
+          <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -191,11 +196,15 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ------- Services -------
-function ServicesPanel() {
+function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId: string | null }) {
   const qc = useQueryClient();
   const { data: pros } = useQuery({
-    queryKey: ["all-pros"],
-    queryFn: async () => (await supabase.from("professionals").select("*").order("name")).data ?? [],
+    queryKey: ["all-pros", restrictToProfessionalId],
+    queryFn: async () => {
+      let q = supabase.from("professionals").select("*").order("name");
+      if (restrictToProfessionalId) q = q.eq("id", restrictToProfessionalId);
+      return (await q).data ?? [];
+    },
   });
   const { data: services } = useQuery({
     queryKey: ["all-services"],
