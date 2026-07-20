@@ -24,7 +24,48 @@ const pillarBarber = pillarBarberNewAsset.url;
 const afonsoImg = collabAfonsoAsset.url;
 const alexiaImg = collabAlexiaAsset.url;
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  component: Home,
+  head: () => ({
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "HealthAndBeautyBusiness",
+          name: "Studio Soares",
+          description:
+            "Studio de beleza em São Miguel Arcanjo — cabelo, barba, unhas, maquiagem e noivas.",
+          image: "/favicon.ico",
+          telephone: "+55-15-99999-9999",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "R. Cel. Fernando Prestes, 622",
+            addressLocality: "São Miguel Arcanjo",
+            addressRegion: "SP",
+            addressCountry: "BR",
+          },
+          areaServed: "São Miguel Arcanjo e Região",
+          openingHoursSpecification: [
+            {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: [
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+              ],
+              opens: "09:00",
+              closes: "19:00",
+            },
+          ],
+cyril:          priceRange: "$$",
+        }),
+      },
+    ],
+  }),
+});
 
 type Professional = {
   id: string; slug: string; name: string; role_title: string; bio: string | null;
