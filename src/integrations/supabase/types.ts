@@ -60,6 +60,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -125,7 +132,56 @@ export type Database = {
             referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "claim_audit_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          first_visit_at: string
+          id: string
+          last_visit_at: string
+          name: string
+          notes: string | null
+          opted_out: boolean
+          phone_digits: string
+          phone_display: string
+          total_appointments: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_visit_at?: string
+          id?: string
+          last_visit_at?: string
+          name: string
+          notes?: string | null
+          opted_out?: boolean
+          phone_digits: string
+          phone_display: string
+          total_appointments?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_visit_at?: string
+          id?: string
+          last_visit_at?: string
+          name?: string
+          notes?: string | null
+          opted_out?: boolean
+          phone_digits?: string
+          phone_display?: string
+          total_appointments?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       professionals: {
         Row: {
@@ -190,6 +246,71 @@ export type Database = {
         }
         Relationships: []
       }
+      reengagement_events: {
+        Row: {
+          channel: string
+          customer_id: string
+          id: string
+          message: string | null
+          sent_at: string
+          status: string
+          webhook_response: string | null
+        }
+        Insert: {
+          channel?: string
+          customer_id: string
+          id?: string
+          message?: string | null
+          sent_at?: string
+          status: string
+          webhook_response?: string | null
+        }
+        Update: {
+          channel?: string
+          customer_id?: string
+          id?: string
+          message?: string | null
+          sent_at?: string
+          status?: string
+          webhook_response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reengagement_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reengagement_settings: {
+        Row: {
+          cooldown_days: number
+          days_threshold: number
+          enabled: boolean
+          id: number
+          message_template: string
+          updated_at: string
+        }
+        Insert: {
+          cooldown_days?: number
+          days_threshold?: number
+          enabled?: boolean
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Update: {
+          cooldown_days?: number
+          days_threshold?: number
+          enabled?: boolean
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           active: boolean
@@ -232,6 +353,13 @@ export type Database = {
             referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -254,7 +382,75 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      appointments_busy: {
+        Row: {
+          end_at: string | null
+          professional_id: string | null
+          start_at: string | null
+          status: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Insert: {
+          end_at?: string | null
+          professional_id?: string | null
+          start_at?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Update: {
+          end_at?: string | null
+          professional_id?: string | null
+          start_at?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professionals_public: {
+        Row: {
+          active: boolean | null
+          bio: string | null
+          id: string | null
+          name: string | null
+          role_title: string | null
+          slug: string | null
+          work_end: string | null
+          work_start: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          bio?: string | null
+          id?: string | null
+          name?: string | null
+          role_title?: string | null
+          slug?: string | null
+          work_end?: string | null
+          work_start?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          bio?: string | null
+          id?: string | null
+          name?: string | null
+          role_title?: string | null
+          slug?: string | null
+          work_end?: string | null
+          work_start?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_regenerate_claim_code: {
