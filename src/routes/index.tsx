@@ -103,14 +103,12 @@ function Home() {
           {step === 0 && <Hero onStart={() => setStep(1)} />}
           {step === 0 && (
             <Pillars
-              onPickSlug={(slug) => {
-                setStep(1);
-                // defer so StepPro mounts and can be pre-selected via slug
+              onPickPro={(p) => {
+                setPro(p);
+                setStep(2);
                 queueMicrotask(() => {
-                  const el = document.getElementById("agendar");
-                  el?.scrollIntoView({ behavior: "smooth" });
+                  document.getElementById("agendar")?.scrollIntoView({ behavior: "smooth" });
                 });
-                pickBySlug(slug);
               }}
             />
           )}
