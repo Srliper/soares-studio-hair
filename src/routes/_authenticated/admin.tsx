@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatPrice, formatTime, categoryLabel, type ServiceCategory } from "@/lib/format";
-import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users } from "lucide-react";
 import { Bell } from "lucide-react";
+import { CustomersPanel } from "@/components/admin/CustomersPanel";
+import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -71,10 +73,14 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
             {isAdmin && <TabsTrigger value="codes"><ShieldAlert className="h-4 w-4 mr-1" /> Códigos de vínculo</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="customers"><Users className="h-4 w-4 mr-1" /> Clientes</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="reengagement"><Bell className="h-4 w-4 mr-1" /> Reengajamento</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>

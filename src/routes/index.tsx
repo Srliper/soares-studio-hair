@@ -80,7 +80,7 @@ function useProfessionals() {
   return useQuery({
     queryKey: ["professionals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("professionals").select("*").eq("active", true).order("name");
+      const { data, error } = await supabase.from("professionals_public").select("*").order("name");
       if (error) throw error;
       return data as Professional[];
     },
@@ -106,7 +106,7 @@ function useBusySlots(professionalId?: string, day?: string) {
     queryFn: async () => {
       const start = new Date(day + "T00:00:00");
       const end = new Date(day + "T23:59:59");
-      const { data, error } = await supabase.from("appointments")
+      const { data, error } = await supabase.from("appointments_busy")
         .select("start_at,end_at")
         .eq("professional_id", professionalId!)
         .gte("start_at", start.toISOString())
