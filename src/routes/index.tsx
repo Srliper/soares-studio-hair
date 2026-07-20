@@ -15,9 +15,12 @@ import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
 import pillarHair from "@/assets/pillar-hair.jpg";
 import pillarNails from "@/assets/pillar-nails.jpg";
-import pillarWedding from "@/assets/pillar-wedding.jpg";
+import pillarWeddingAsset from "@/assets/pillar-casamentos.png.asset.json";
+import pillarBarberAsset from "@/assets/pillar-barber.jpg.asset.json";
 import afonsoAsset from "@/assets/afonso-real.png.asset.json";
 import duoAsset from "@/assets/afonso-alexia.png.asset.json";
+const pillarWedding = pillarWeddingAsset.url;
+const pillarBarber = pillarBarberAsset.url;
 const afonsoImg = afonsoAsset.url;
 const alexiaImg = duoAsset.url;
 
@@ -98,7 +101,19 @@ function Home() {
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
-          {step === 0 && <Pillars />}
+          {step === 0 && (
+            <Pillars
+              onPickSlug={(slug) => {
+                setStep(1);
+                // defer so StepPro mounts and can be pre-selected via slug
+                queueMicrotask(() => {
+                  const el = document.getElementById("agendar");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                });
+                pickBySlug(slug);
+              }}
+            />
+          )}
           {step === 0 && <Collaborators />}
           <section id="agendar" className="mx-auto max-w-5xl px-4 pb-24">
             <div className="mb-8 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
