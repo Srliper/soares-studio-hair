@@ -6,16 +6,94 @@ const DEFAULT_PHONE = "5515998343669";
 const DEFAULT_MESSAGE =
   "Olá! Vim pelo site do Studio Soares e gostaria de mais informações.";
 
-// Accept common formats ("+55 15 99834-3669", "(15) 99834-3669", etc.) and
-// normalize to digits — wa.me requires digits only, with country code.
-function normalizePhone(raw: string | undefined): string {
-  const digits = (raw ?? "").replace(/\D/g, "");
-  return digits || DEFAULT_PHONE;
+// wa.me expects E.164 digits: country + area + subscriber, 8-15 total.
+// Reject anything outside that range or that fails to yield digits at all.
+const PHONE_MIN = 8;
+const PHONE_MAX = 15;
+const MESSAGE_MAX = 1000; // wa.me truncates very long messages; keep it sane.
+
+type Resolved<T> = { value: T; source: "env" | "default"; warning?: string };
+
+function resolvePhone(raw: string | undefined): Resolved<string> {
+  if (raw === undefined) {
+    return { value: DEFAULT_PHONE, source: "default" };
+  }
+  const trimmed = raw.trim();
+  if (trimmed === "") {
+    return {
+      value: DEFAULT_PHONE,
+      source: "default",
+      warning: "VITE_WHATSAPP_NUMBER está vazio — usando número padrão.",
+    };
+  }
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length < PHONE_MIN || digits.length > PHONE_MAX) {
+    return {
+      value: DEFAULT_PHONE,
+      source: "default",
+      warning:
+        `VITE_WHATSAPP_NUMBER="${trimmed}" inválido (${digits.length} dígitos; ` +
+        `esperado ${PHONE_MIN}–${PHONE_MAX} incluindo código do país). Usando número padrão.`,
+    };
+  }
+  if (!/^[+\d\s().-]+$/.test(trimmed)) {
+    return {
+      value: digits,
+      source: "env",
+      warning:
+        `VITE_WHATSAPP_NUMBER="${trimmed}" contém caracteres inesperados; ` +
+        "aceito, mas revise o formato (ex.: +55 15 99834-3669).",
+    };
+  }
+  return { value: digits, source: "env" };
 }
 
-const PHONE = normalizePhone(import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined);
-const MESSAGE =
-  (import.meta.env.VITE_WHATSAPP_MESSAGE as string | undefined)?.trim() || DEFAULT_MESSAGE;
+function resolveMessage(raw: string | undefined): Resolved<string> {
+  if (raw === undefined) {
+    return { value: DEFAULT_MESSAGE, source: "default" };
+  }
+  const trimmed = raw.trim();
+  if (trimmed === "") {
+    return {
+      value: DEFAULT_MESSAGE,
+      source: "default",
+      warning: "VITE_WHATSAPP_MESSAGE está vazio — usando mensagem padrão.",
+    };
+  }
+  if (trimmed.length > MESSAGE_MAX) {
+    return {
+      value: trimmed.slice(0, MESSAGE_MAX),
+      source: "env",
+      warning:
+        `VITE_WHATSAPP_MESSAGE tem ${trimmed.length} caracteres (>${MESSAGE_MAX}); ` +
+        "truncando para caber no link do WhatsApp.",
+    };
+  }
+  return { value: trimmed, source: "env" };
+}
+
+const phoneResolved = resolvePhone(
+  import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined,
+);
+const messageResolved = resolveMessage(
+  import.meta.env.VITE_WHATSAPP_MESSAGE as string | undefined,
+);
+
+// Emit validation feedback once at module load. Warnings go to console.warn
+// in every environment; a success summary only shows in dev to reduce noise.
+if (typeof console !== "undefined") {
+  if (phoneResolved.warning) console.warn(`[WhatsAppFloat] ${phoneResolved.warning}`);
+  if (messageResolved.warning) console.warn(`[WhatsAppFloat] ${messageResolved.warning}`);
+  if (import.meta.env.DEV) {
+    console.info(
+      `[WhatsAppFloat] number=${phoneResolved.source} (${phoneResolved.value.length} dígitos) ` +
+        `| message=${messageResolved.source} (${messageResolved.value.length} chars)`,
+    );
+  }
+}
+
+const PHONE = phoneResolved.value;
+const MESSAGE = messageResolved.value;
 
 export function WhatsAppFloat() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
