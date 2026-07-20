@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from "sonner";
 import { formatPrice, formatTime, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Bell } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -63,6 +64,8 @@ function AdminPage() {
           </div>
         </div>
       </header>
+
+      {isAdmin && <ClaimNotifier />}
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <Tabs defaultValue={isAdmin ? "appointments" : "services"}>
