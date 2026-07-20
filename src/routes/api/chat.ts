@@ -10,12 +10,12 @@ async function loadContext() {
     if (!url || !key) return "";
     const sb = createClient(url, key, { auth: { persistSession: false } });
     const [{ data: pros }, { data: svcs }] = await Promise.all([
-      sb.from("professionals").select("id,name,specialty"),
+      sb.from("professionals_public").select("id,name,role_title"),
       sb.from("services").select("name,duration_min,price_cents,professional_id"),
     ]);
     const lines: string[] = [];
     for (const p of pros ?? []) {
-      lines.push(`- ${p.name} (${p.specialty ?? "profissional"}):`);
+      lines.push(`- ${p.name} (${p.role_title ?? "profissional"}):`);
       for (const s of (svcs ?? []).filter((x) => x.professional_id === p.id)) {
         const price = s.price_cents ? `R$ ${(s.price_cents / 100).toFixed(2)}` : "sob consulta";
         lines.push(`   • ${s.name} — ${s.duration_min ?? "?"} min — ${price}`);
