@@ -24,7 +24,7 @@ export function BeforeAfterGallery() {
       const { data, error } = await supabase
         .from("portfolio_items")
         .select("id, professional_id, category, title, before_path, after_path, professionals(name)")
-        .eq("active", true)
+        .eq("status", "aprovado")
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
