@@ -572,6 +572,8 @@ function StepSlot({
           Continuar <ChevronRight className="ml-1 h-4 w-4" />
         </Button>
       )}
+
+      {day && <WaitlistCTA pro={pro} service={service} day={day} />}
     </div>
   );
 }
