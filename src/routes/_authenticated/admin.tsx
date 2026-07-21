@@ -19,6 +19,8 @@ import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
 import { TimeBlocksPanel } from "@/components/admin/TimeBlocksPanel";
 import { ReminderPanel } from "@/components/admin/ReminderPanel";
 import { PortfolioPanel } from "@/components/admin/PortfolioPanel";
+import { PreLaunchPanel } from "@/components/admin/PreLaunchPanel";
+import { Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -81,6 +83,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="customers"><Users className="h-4 w-4 mr-1" /> Clientes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reengagement"><Bell className="h-4 w-4 mr-1" /> Reengajamento</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reminders"><Bell className="h-4 w-4 mr-1" /> Lembretes</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="prelaunch"><Rocket className="h-4 w-4 mr-1" /> Pré-lançamento</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
@@ -90,6 +93,7 @@ function AdminPage() {
           {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reminders"><ReminderPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="prelaunch"><PreLaunchPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>
