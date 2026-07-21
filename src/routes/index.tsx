@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -75,6 +75,10 @@ type Service = {
   id: string; professional_id: string; name: string; category: ServiceCategory;
   price_cents: number; duration_minutes: number;
 };
+type ServiceVariant = {
+  id: string; service_id: string; name: string; description: string | null;
+  extra_price_cents: number; sort_order: number;
+};
 
 function useProfessionals() {
   return useQuery({
@@ -99,6 +103,18 @@ function useServices(professionalId?: string) {
     },
   });
 }
+function useServiceVariants(serviceId?: string) {
+  return useQuery({
+    queryKey: ["service-variants", serviceId],
+    enabled: !!serviceId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_variants").select("*")
+        .eq("service_id", serviceId!).eq("active", true).order("sort_order");
+      if (error) throw error;
+      return data as ServiceVariant[];
+    },
+  });
+}
 function useBusySlots(professionalId?: string, day?: string) {
   return useQuery({
     queryKey: ["busy", professionalId, day],
@@ -118,9 +134,12 @@ function useBusySlots(professionalId?: string, day?: string) {
 }
 
 function Home() {
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [pro, setPro] = useState<Professional | null>(null);
   const [service, setService] = useState<Service | null>(null);
+  const [variant, setVariant] = useState<ServiceVariant | null>(null);
+  const [referencePath, setReferencePath] = useState<string | null>(null);
+  const [styleNotes, setStyleNotes] = useState("");
   const [day, setDay] = useState<string>("");
   const [slot, setSlot] = useState<string>("");
   const [name, setName] = useState("");
@@ -130,7 +149,8 @@ function Home() {
   const [done, setDone] = useState(false);
 
   const reset = () => {
-    setStep(0); setPro(null); setService(null); setDay(""); setSlot("");
+    setStep(0); setPro(null); setService(null); setVariant(null);
+    setReferencePath(null); setStyleNotes(""); setDay(""); setSlot("");
     setName(""); setPhone(""); setNotes(""); setDone(false);
   };
 
@@ -158,24 +178,37 @@ function Home() {
             <div className="mb-8 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
               <span className={step >= 1 ? "text-primary" : ""}>Profissional</span> <ChevronRight className="h-3 w-3" />
               <span className={step >= 2 ? "text-primary" : ""}>Serviço</span> <ChevronRight className="h-3 w-3" />
-              <span className={step >= 3 ? "text-primary" : ""}>Horário</span> <ChevronRight className="h-3 w-3" />
-              <span className={step >= 4 ? "text-primary" : ""}>Confirmação</span>
+              <span className={step >= 3 ? "text-primary" : ""}>Estilo</span> <ChevronRight className="h-3 w-3" />
+              <span className={step >= 4 ? "text-primary" : ""}>Horário</span> <ChevronRight className="h-3 w-3" />
+              <span className={step >= 5 ? "text-primary" : ""}>Confirmação</span>
             </div>
             <AnimatePresence mode="wait">
-              {step >= 1 && step <= 4 && (
+              {step >= 1 && step <= 5 && (
                 <motion.div key={step} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                   {step === 1 && <StepPro onPick={(p) => { setPro(p); setStep(2); }} />}
                   {step === 2 && pro && (
-                    <StepService pro={pro} onBack={() => setStep(1)} onPick={(s) => { setService(s); setStep(3); }} />
+                    <StepService pro={pro} onBack={() => setStep(1)} onPick={(s) => {
+                      setService(s); setVariant(null); setReferencePath(null); setStyleNotes(""); setStep(3);
+                    }} />
                   )}
-                  {step === 3 && pro && service && (
-                    <StepSlot pro={pro} service={service} day={day} setDay={setDay} slot={slot} setSlot={setSlot}
-                      onBack={() => setStep(2)} onNext={() => setStep(4)} />
+                  {step === 3 && service && (
+                    <StepStyle
+                      service={service}
+                      variant={variant} setVariant={setVariant}
+                      referencePath={referencePath} setReferencePath={setReferencePath}
+                      styleNotes={styleNotes} setStyleNotes={setStyleNotes}
+                      onBack={() => setStep(2)} onNext={() => setStep(4)}
+                    />
                   )}
                   {step === 4 && pro && service && (
-                    <StepConfirm pro={pro} service={service} day={day} slot={slot} name={name} setName={setName}
+                    <StepSlot pro={pro} service={service} day={day} setDay={setDay} slot={slot} setSlot={setSlot}
+                      onBack={() => setStep(3)} onNext={() => setStep(5)} />
+                  )}
+                  {step === 5 && pro && service && (
+                    <StepConfirm pro={pro} service={service} variant={variant} referencePath={referencePath}
+                      styleNotes={styleNotes} day={day} slot={slot} name={name} setName={setName}
                       phone={phone} setPhone={setPhone} notes={notes} setNotes={setNotes} submitting={submitting}
-                      onBack={() => setStep(3)}
+                      onBack={() => setStep(4)}
                       onSubmit={async () => {
                         if (!name.trim() || !phone.trim()) { toast.error("Preencha nome e telefone"); return; }
                         setSubmitting(true);
@@ -183,6 +216,9 @@ function Home() {
                         const end = new Date(start.getTime() + service.duration_minutes * 60000);
                         const { error } = await supabase.from("appointments").insert({
                           professional_id: pro.id, service_id: service.id,
+                          service_variant_id: variant?.id ?? null,
+                          reference_image_url: referencePath,
+                          style_notes: styleNotes.trim() || null,
                           client_name: name, client_phone: phone, client_notes: notes || null,
                           start_at: start.toISOString(), end_at: end.toISOString(), status: "pendente",
                         });
