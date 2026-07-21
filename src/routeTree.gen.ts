@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicHooksWaitlistSlotFreedRouteImport } from './routes/api/public/hooks/waitlist-slot-freed'
 import { Route as ApiPublicHooksReminderRouteImport } from './routes/api/public/hooks/reminder'
 import { Route as ApiPublicHooksReengagementRouteImport } from './routes/api/public/hooks/reengagement'
 
@@ -47,6 +48,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksWaitlistSlotFreedRoute =
+  ApiPublicHooksWaitlistSlotFreedRouteImport.update({
+    id: '/api/public/hooks/waitlist-slot-freed',
+    path: '/api/public/hooks/waitlist-slot-freed',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksReminderRoute = ApiPublicHooksReminderRouteImport.update({
   id: '/api/public/hooks/reminder',
   path: '/api/public/hooks/reminder',
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +96,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/waitlist-slot-freed'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/waitlist-slot-freed'
   id:
     | '__root__'
     | '/'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/waitlist-slot-freed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -127,6 +140,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
   ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
+  ApiPublicHooksWaitlistSlotFreedRoute: typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -173,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/waitlist-slot-freed': {
+      id: '/api/public/hooks/waitlist-slot-freed'
+      path: '/api/public/hooks/waitlist-slot-freed'
+      fullPath: '/api/public/hooks/waitlist-slot-freed'
+      preLoaderRoute: typeof ApiPublicHooksWaitlistSlotFreedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/reminder': {
       id: '/api/public/hooks/reminder'
       path: '/api/public/hooks/reminder'
@@ -209,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
   ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
+  ApiPublicHooksWaitlistSlotFreedRoute: ApiPublicHooksWaitlistSlotFreedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
