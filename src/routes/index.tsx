@@ -1000,32 +1000,47 @@ function WaitlistCTA({ pro, service, day }: { pro: Professional; service: Servic
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [doneToken, setDoneToken] = useState<string | null>(null);
 
   const submit = async () => {
     if (name.trim().length < 2) return toast.error("Informe seu nome");
     if (phone.replace(/\D/g, "").length < 10) return toast.error("Telefone inválido");
     setSubmitting(true);
-    const { error } = await supabase.from("waitlist").insert({
-      professional_id: pro.id,
-      service_id: service.id,
-      client_name: name.trim(),
-      client_phone: phone.trim(),
-      desired_date: day,
-      notes: notes.trim() || null,
-      status: "aguardando",
-    });
+    const { data, error } = await supabase
+      .from("waitlist")
+      .insert({
+        professional_id: pro.id,
+        service_id: service.id,
+        client_name: name.trim(),
+        client_phone: phone.trim(),
+        desired_date: day,
+        notes: notes.trim() || null,
+        status: "aguardando",
+      })
+      .select("track_token")
+      .single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    setDone(true);
+    setDoneToken(data?.track_token ?? "");
     toast.success("Você entrou na lista de espera!");
   };
 
-  if (done) {
+  if (doneToken !== null) {
+    const url = `/espera/${doneToken}`;
     return (
       <div className="mt-6 rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
-        Prontinho! Vamos te avisar por WhatsApp se um horário abrir com {pro.name} em{" "}
-        {new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}.
+        <div>
+          Prontinho! Vamos te avisar por WhatsApp se um horário abrir com {pro.name} em{" "}
+          {new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}.
+        </div>
+        {doneToken && (
+          <a
+            href={url}
+            className="mt-3 inline-block text-primary hover:underline underline-offset-4 font-medium"
+          >
+            Acompanhar minha posição na lista →
+          </a>
+        )}
       </div>
     );
   }
