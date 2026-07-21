@@ -211,6 +211,63 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_items: {
+        Row: {
+          active: boolean
+          after_path: string
+          before_path: string
+          category: Database["public"]["Enums"]["service_category"]
+          created_at: string
+          id: string
+          notes: string | null
+          professional_id: string
+          sort_order: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          after_path: string
+          before_path: string
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          professional_id: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          after_path?: string
+          before_path?: string
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          professional_id?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_items_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_items_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professionals: {
         Row: {
           active: boolean
