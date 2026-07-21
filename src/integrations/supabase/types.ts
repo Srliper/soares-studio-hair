@@ -599,6 +599,7 @@ export type Database = {
           professional_id: string
           service_id: string
           status: string
+          track_token: string
           updated_at: string
         }
         Insert: {
@@ -612,6 +613,7 @@ export type Database = {
           professional_id: string
           service_id: string
           status?: string
+          track_token?: string
           updated_at?: string
         }
         Update: {
@@ -625,6 +627,7 @@ export type Database = {
           professional_id?: string
           service_id?: string
           status?: string
+          track_token?: string
           updated_at?: string
         }
         Relationships: [
@@ -739,6 +742,7 @@ export type Database = {
       }
       claim_professional: { Args: { _code: string }; Returns: string }
       get_appointment_by_token: { Args: { _token: string }; Returns: Json }
+      get_waitlist_status: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -746,6 +750,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      leave_waitlist: { Args: { _token: string }; Returns: undefined }
       owns_professional: { Args: { _prof_id: string }; Returns: boolean }
       reschedule_appointment_by_token: {
         Args: { _new_start: string; _token: string }
