@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -635,8 +635,24 @@ function StepStyle({
   const { data: variants, isLoading } = useServiceVariants(service.id);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [priceFilter, setPriceFilter] = useState<"all" | "included" | "upgrade">("all");
 
   const hasVariants = (variants?.length ?? 0) > 0;
+
+  const filteredVariants = useMemo(() => {
+    if (!variants) return [];
+    const q = query.trim().toLowerCase();
+    return variants.filter((v) => {
+      if (priceFilter === "included" && v.extra_price_cents > 0) return false;
+      if (priceFilter === "upgrade" && v.extra_price_cents === 0) return false;
+      if (!q) return true;
+      const hay = `${v.name} ${v.description ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [variants, query, priceFilter]);
+
+  const hasUpgrade = useMemo(() => (variants ?? []).some((v) => v.extra_price_cents > 0), [variants]);
 
   const onFile = async (file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Selecione uma imagem"); return; }
@@ -670,9 +686,62 @@ function StepStyle({
 
       {hasVariants && (
         <div className="mb-8">
-          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Estilo</Label>
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Estilo</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {filteredVariants.length} de {variants!.length}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar estilo (ex: degradê, franja, fade…)"
+                aria-label="Buscar estilo"
+                className="pl-9"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Limpar busca"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {hasUpgrade && (
+              <div className="flex gap-1.5 shrink-0" role="tablist" aria-label="Filtrar por preço">
+                {([
+                  ["all", "Todos"],
+                  ["included", "Sem custo"],
+                  ["upgrade", "Upgrade"],
+                ] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setPriceFilter(id)}
+                    aria-pressed={priceFilter === id}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      priceFilter === id
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {variants!.map((v) => {
+            {filteredVariants.map((v) => {
               const sel = variant?.id === v.id;
               return (
                 <button key={v.id} type="button" onClick={() => setVariant(sel ? null : v)}
@@ -692,6 +761,11 @@ function StepStyle({
             })}
           </div>
           {isLoading && <p className="text-xs text-muted-foreground mt-2">Carregando estilos…</p>}
+          {!isLoading && filteredVariants.length === 0 && (
+            <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+              Nenhum estilo encontrado. <button type="button" onClick={() => { setQuery(""); setPriceFilter("all"); }} className="text-primary underline underline-offset-2">Limpar filtros</button>
+            </div>
+          )}
           <p className="mt-2 text-[11px] text-muted-foreground">Opcional — pule se preferir combinar diretamente com o profissional.</p>
         </div>
       )}
