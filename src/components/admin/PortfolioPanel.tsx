@@ -8,12 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { GalleryHorizontal, Plus, Trash2, Upload, Eye, EyeOff } from "lucide-react";
+import { GalleryHorizontal, Plus, Trash2, Upload, Check, EyeOff, Clock } from "lucide-react";
 import { categoryLabel, type ServiceCategory } from "@/lib/format";
 
 const CATEGORIES: ServiceCategory[] = ["masculino", "feminino", "noiva", "manicure", "maquiagem", "outro"];
 
-export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfessionalId: string | null }) {
+type Status = "rascunho" | "aprovado" | "oculto";
+const STATUS_LABEL: Record<Status, string> = { rascunho: "Rascunho", aprovado: "Aprovado", oculto: "Oculto" };
+const STATUS_STYLE: Record<Status, string> = {
+  rascunho: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  aprovado: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  oculto: "border-muted-foreground/30 bg-muted/40 text-muted-foreground",
+};
+
+export function PortfolioPanel({ restrictToProfessionalId, isAdmin }: { restrictToProfessionalId: string | null; isAdmin: boolean }) {
   const qc = useQueryClient();
   const [proId, setProId] = useState<string>(restrictToProfessionalId ?? "");
   const [category, setCategory] = useState<ServiceCategory>("masculino");
@@ -22,6 +30,7 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
   const [beforeFile, setBeforeFile] = useState<File | null>(null);
   const [afterFile, setAfterFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [filter, setFilter] = useState<"all" | Status>("all");
 
   const pros = useQuery({
     queryKey: ["portfolio-pros"],
@@ -34,10 +43,11 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
   });
 
   const list = useQuery({
-    queryKey: ["portfolio-items", restrictToProfessionalId ?? "all"],
+    queryKey: ["portfolio-items", restrictToProfessionalId ?? "all", filter],
     queryFn: async () => {
       let q = supabase.from("portfolio_items").select("*, professionals(name)").order("created_at", { ascending: false });
       if (restrictToProfessionalId) q = q.eq("professional_id", restrictToProfessionalId);
+      if (filter !== "all") q = q.eq("status", filter);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -71,6 +81,7 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
           uploadOne(beforeFile, target, "before"),
           uploadOne(afterFile, target, "after"),
         ]);
+        const initialStatus: Status = isAdmin ? "aprovado" : "rascunho";
         const { error } = await supabase.from("portfolio_items").insert({
           professional_id: target,
           category,
@@ -78,6 +89,7 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
           notes: notes.trim() || null,
           before_path,
           after_path,
+          status: initialStatus,
         });
         if (error) throw error;
       } finally {
@@ -85,19 +97,24 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
       }
     },
     onSuccess: () => {
-      toast.success("Item adicionado à galeria");
+      toast.success(isAdmin ? "Item aprovado e publicado" : "Enviado para aprovação");
       setTitle(""); setNotes(""); setBeforeFile(null); setAfterFile(null);
       qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+      qc.invalidateQueries({ queryKey: ["portfolio-public"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Falha ao enviar"),
   });
 
-  const toggle = useMutation({
-    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await supabase.from("portfolio_items").update({ active }).eq("id", id);
+  const setStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: Status }) => {
+      const { error } = await supabase.from("portfolio_items").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portfolio-items"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+      qc.invalidateQueries({ queryKey: ["portfolio-public"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Falha ao atualizar"),
   });
 
   const del = useMutation({
@@ -106,7 +123,11 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
       const { error } = await supabase.from("portfolio_items").delete().eq("id", item.id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Removido"); qc.invalidateQueries({ queryKey: ["portfolio-items"] }); },
+    onSuccess: () => {
+      toast.success("Removido");
+      qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+      qc.invalidateQueries({ queryKey: ["portfolio-public"] });
+    },
   });
 
   return (
@@ -160,12 +181,30 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
 
         <Button className="mt-4" onClick={() => create.mutate()} disabled={uploading || create.isPending}>
           {uploading ? <Upload className="h-4 w-4 mr-1 animate-pulse" /> : <Plus className="h-4 w-4 mr-1" />}
-          {uploading ? "Enviando…" : "Publicar item"}
+          {uploading ? "Enviando…" : isAdmin ? "Publicar item" : "Enviar para aprovação"}
         </Button>
+        {!isAdmin && (
+          <p className="mt-2 text-xs text-muted-foreground">Seu item ficará como <strong>rascunho</strong> até um administrador aprovar.</p>
+        )}
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-display text-lg mb-4">Itens publicados</h3>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-display text-lg">Itens da galeria</h3>
+          <div className="flex flex-wrap gap-1">
+            {(["all", "rascunho", "aprovado", "oculto"] as const).map((k) => (
+              <button
+                key={k}
+                onClick={() => setFilter(k)}
+                className={`rounded-full border px-3 py-1 text-xs uppercase tracking-widest transition ${
+                  filter === k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {k === "all" ? "Todos" : STATUS_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        </div>
         {list.isLoading ? (
           <div className="text-muted-foreground text-sm">Carregando…</div>
         ) : (list.data ?? []).length === 0 ? (
@@ -176,7 +215,8 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
               <PortfolioItemCard
                 key={item.id}
                 item={item}
-                onToggle={() => toggle.mutate({ id: item.id, active: !item.active })}
+                isAdmin={isAdmin}
+                onSetStatus={(status: Status) => setStatus.mutate({ id: item.id, status })}
                 onDelete={() => { if (confirm("Remover este item?")) del.mutate(item); }}
               />
             ))}
@@ -187,7 +227,8 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
   );
 }
 
-function PortfolioItemCard({ item, onToggle, onDelete }: any) {
+function PortfolioItemCard({ item, isAdmin, onSetStatus, onDelete }: any) {
+  const status = (item.status ?? "rascunho") as Status;
   const { data: urls } = useQuery({
     queryKey: ["portfolio-signed", item.before_path, item.after_path],
     queryFn: async () => {
@@ -197,19 +238,36 @@ function PortfolioItemCard({ item, onToggle, onDelete }: any) {
     },
   });
   return (
-    <div className={`rounded-lg border p-3 ${item.active ? "border-border" : "border-border/40 opacity-60"}`}>
+    <div className={`rounded-lg border p-3 ${status === "aprovado" ? "border-border" : "border-border/40"}`}>
       <div className="grid grid-cols-2 gap-1">
         {urls?.before ? <img src={urls.before} alt="Antes" className="aspect-square rounded object-cover" /> : <div className="aspect-square rounded bg-muted/40" />}
         {urls?.after ? <img src={urls.after} alt="Depois" className="aspect-square rounded object-cover" /> : <div className="aspect-square rounded bg-muted/40" />}
       </div>
-      <div className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">
-        {item.professionals?.name} · {categoryLabel[item.category as ServiceCategory]}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {item.professionals?.name} · {categoryLabel[item.category as ServiceCategory]}
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${STATUS_STYLE[status]}`}>
+          {STATUS_LABEL[status]}
+        </span>
       </div>
       {item.title && <div className="mt-1 text-sm font-medium">{item.title}</div>}
-      <div className="mt-2 flex justify-end gap-1">
-        <Button variant="ghost" size="icon" onClick={onToggle} title={item.active ? "Ocultar" : "Publicar"}>
-          {item.active ? <Eye className="h-4 w-4 text-primary" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-        </Button>
+      <div className="mt-2 flex flex-wrap justify-end gap-1">
+        {isAdmin && status !== "aprovado" && (
+          <Button variant="ghost" size="sm" onClick={() => onSetStatus("aprovado")} title="Aprovar">
+            <Check className="h-4 w-4 mr-1 text-emerald-500" /> Aprovar
+          </Button>
+        )}
+        {status !== "oculto" && (
+          <Button variant="ghost" size="sm" onClick={() => onSetStatus("oculto")} title="Ocultar">
+            <EyeOff className="h-4 w-4 mr-1 text-muted-foreground" /> Ocultar
+          </Button>
+        )}
+        {status === "oculto" && (
+          <Button variant="ghost" size="sm" onClick={() => onSetStatus("rascunho")} title="Voltar para rascunho">
+            <Clock className="h-4 w-4 mr-1 text-amber-500" /> Rascunho
+          </Button>
+        )}
         <Button variant="ghost" size="icon" onClick={onDelete}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
