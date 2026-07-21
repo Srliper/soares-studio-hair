@@ -994,3 +994,78 @@ function Footer() {
   );
 }
 
+function WaitlistCTA({ pro, service, day }: { pro: Professional; service: Service; day: string }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const submit = async () => {
+    if (name.trim().length < 2) return toast.error("Informe seu nome");
+    if (phone.replace(/\D/g, "").length < 10) return toast.error("Telefone inválido");
+    setSubmitting(true);
+    const { error } = await supabase.from("waitlist").insert({
+      professional_id: pro.id,
+      service_id: service.id,
+      client_name: name.trim(),
+      client_phone: phone.trim(),
+      desired_date: day,
+      notes: notes.trim() || null,
+      status: "aguardando",
+    });
+    setSubmitting(false);
+    if (error) return toast.error(error.message);
+    setDone(true);
+    toast.success("Você entrou na lista de espera!");
+  };
+
+  if (done) {
+    return (
+      <div className="mt-6 rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
+        Prontinho! Vamos te avisar por WhatsApp se um horário abrir com {pro.name} em{" "}
+        {new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-dashed border-border/60 p-4">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="text-sm text-primary hover:underline underline-offset-4"
+        >
+          Não achou horário? Entrar na lista de espera →
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm font-medium">Lista de espera</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Avisamos por WhatsApp assim que um horário abrir com {pro.name} nesta data.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="WhatsApp com DDD" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <Input
+            placeholder="Observação (opcional) — ex.: prefiro manhã"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={200}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={submit} disabled={submitting}>
+              {submitting ? "Enviando…" : "Entrar na lista"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
