@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -75,6 +75,10 @@ type Service = {
   id: string; professional_id: string; name: string; category: ServiceCategory;
   price_cents: number; duration_minutes: number;
 };
+type ServiceVariant = {
+  id: string; service_id: string; name: string; description: string | null;
+  extra_price_cents: number; sort_order: number;
+};
 
 function useProfessionals() {
   return useQuery({
@@ -99,6 +103,18 @@ function useServices(professionalId?: string) {
     },
   });
 }
+function useServiceVariants(serviceId?: string) {
+  return useQuery({
+    queryKey: ["service-variants", serviceId],
+    enabled: !!serviceId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_variants").select("*")
+        .eq("service_id", serviceId!).eq("active", true).order("sort_order");
+      if (error) throw error;
+      return data as ServiceVariant[];
+    },
+  });
+}
 function useBusySlots(professionalId?: string, day?: string) {
   return useQuery({
     queryKey: ["busy", professionalId, day],
@@ -118,9 +134,12 @@ function useBusySlots(professionalId?: string, day?: string) {
 }
 
 function Home() {
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [pro, setPro] = useState<Professional | null>(null);
   const [service, setService] = useState<Service | null>(null);
+  const [variant, setVariant] = useState<ServiceVariant | null>(null);
+  const [referencePath, setReferencePath] = useState<string | null>(null);
+  const [styleNotes, setStyleNotes] = useState("");
   const [day, setDay] = useState<string>("");
   const [slot, setSlot] = useState<string>("");
   const [name, setName] = useState("");
@@ -130,7 +149,8 @@ function Home() {
   const [done, setDone] = useState(false);
 
   const reset = () => {
-    setStep(0); setPro(null); setService(null); setDay(""); setSlot("");
+    setStep(0); setPro(null); setService(null); setVariant(null);
+    setReferencePath(null); setStyleNotes(""); setDay(""); setSlot("");
     setName(""); setPhone(""); setNotes(""); setDone(false);
   };
 
@@ -158,24 +178,37 @@ function Home() {
             <div className="mb-8 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
               <span className={step >= 1 ? "text-primary" : ""}>Profissional</span> <ChevronRight className="h-3 w-3" />
               <span className={step >= 2 ? "text-primary" : ""}>Serviço</span> <ChevronRight className="h-3 w-3" />
-              <span className={step >= 3 ? "text-primary" : ""}>Horário</span> <ChevronRight className="h-3 w-3" />
-              <span className={step >= 4 ? "text-primary" : ""}>Confirmação</span>
+              <span className={step >= 3 ? "text-primary" : ""}>Estilo</span> <ChevronRight className="h-3 w-3" />
+              <span className={step >= 4 ? "text-primary" : ""}>Horário</span> <ChevronRight className="h-3 w-3" />
+              <span className={step >= 5 ? "text-primary" : ""}>Confirmação</span>
             </div>
             <AnimatePresence mode="wait">
-              {step >= 1 && step <= 4 && (
+              {step >= 1 && step <= 5 && (
                 <motion.div key={step} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                   {step === 1 && <StepPro onPick={(p) => { setPro(p); setStep(2); }} />}
                   {step === 2 && pro && (
-                    <StepService pro={pro} onBack={() => setStep(1)} onPick={(s) => { setService(s); setStep(3); }} />
+                    <StepService pro={pro} onBack={() => setStep(1)} onPick={(s) => {
+                      setService(s); setVariant(null); setReferencePath(null); setStyleNotes(""); setStep(3);
+                    }} />
                   )}
-                  {step === 3 && pro && service && (
-                    <StepSlot pro={pro} service={service} day={day} setDay={setDay} slot={slot} setSlot={setSlot}
-                      onBack={() => setStep(2)} onNext={() => setStep(4)} />
+                  {step === 3 && service && (
+                    <StepStyle
+                      service={service}
+                      variant={variant} setVariant={setVariant}
+                      referencePath={referencePath} setReferencePath={setReferencePath}
+                      styleNotes={styleNotes} setStyleNotes={setStyleNotes}
+                      onBack={() => setStep(2)} onNext={() => setStep(4)}
+                    />
                   )}
                   {step === 4 && pro && service && (
-                    <StepConfirm pro={pro} service={service} day={day} slot={slot} name={name} setName={setName}
+                    <StepSlot pro={pro} service={service} day={day} setDay={setDay} slot={slot} setSlot={setSlot}
+                      onBack={() => setStep(3)} onNext={() => setStep(5)} />
+                  )}
+                  {step === 5 && pro && service && (
+                    <StepConfirm pro={pro} service={service} variant={variant} referencePath={referencePath}
+                      styleNotes={styleNotes} day={day} slot={slot} name={name} setName={setName}
                       phone={phone} setPhone={setPhone} notes={notes} setNotes={setNotes} submitting={submitting}
-                      onBack={() => setStep(3)}
+                      onBack={() => setStep(4)}
                       onSubmit={async () => {
                         if (!name.trim() || !phone.trim()) { toast.error("Preencha nome e telefone"); return; }
                         setSubmitting(true);
@@ -183,6 +216,9 @@ function Home() {
                         const end = new Date(start.getTime() + service.duration_minutes * 60000);
                         const { error } = await supabase.from("appointments").insert({
                           professional_id: pro.id, service_id: service.id,
+                          service_variant_id: variant?.id ?? null,
+                          reference_image_url: referencePath,
+                          style_notes: styleNotes.trim() || null,
                           client_name: name, client_phone: phone, client_notes: notes || null,
                           start_at: start.toISOString(), end_at: end.toISOString(), status: "pendente",
                         });
@@ -514,8 +550,9 @@ function StepSlot({
 }
 
 function StepConfirm({
-  pro, service, day, slot, name, setName, phone, setPhone, notes, setNotes, submitting, onBack, onSubmit,
+  pro, service, variant, referencePath, styleNotes, day, slot, name, setName, phone, setPhone, notes, setNotes, submitting, onBack, onSubmit,
 }: any) {
+  const totalCents = service.price_cents + (variant?.extra_price_cents ?? 0);
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div>
@@ -546,19 +583,143 @@ function StepConfirm({
         <div className="space-y-3 text-sm">
           <Row label="Profissional" value={pro.name} />
           <Row label="Serviço" value={service.name} />
+          {variant && <Row label="Estilo" value={variant.name + (variant.extra_price_cents ? ` (+${formatPrice(variant.extra_price_cents)})` : "")} />}
+          {styleNotes && (
+            <div className="text-xs text-muted-foreground italic pt-1">"{styleNotes}"</div>
+          )}
+          {referencePath && (
+            <div className="pt-1">
+              <div className="flex items-center gap-2 text-xs text-primary">
+                <ImageIcon className="h-3 w-3" /> Foto de referência anexada
+              </div>
+            </div>
+          )}
           <Row label="Duração" value={`${service.duration_minutes} min`} />
           <Row label="Data" value={new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })} />
           <Row label="Horário" value={slot} />
           <div className="border-t border-border/50 my-4" />
           <div className="flex justify-between items-baseline">
             <span className="text-muted-foreground">Total</span>
-            <span className="font-display text-3xl gold-gradient">{formatPrice(service.price_cents)}</span>
+            <span className="font-display text-3xl gold-gradient">{formatPrice(totalCents)}</span>
           </div>
         </div>
       </Card>
     </div>
   );
 }
+
+function StepStyle({
+  service, variant, setVariant, referencePath, setReferencePath, styleNotes, setStyleNotes, onBack, onNext,
+}: {
+  service: Service;
+  variant: ServiceVariant | null; setVariant: (v: ServiceVariant | null) => void;
+  referencePath: string | null; setReferencePath: (p: string | null) => void;
+  styleNotes: string; setStyleNotes: (s: string) => void;
+  onBack: () => void; onNext: () => void;
+}) {
+  const { data: variants, isLoading } = useServiceVariants(service.id);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const hasVariants = (variants?.length ?? 0) > 0;
+
+  const onFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Selecione uma imagem"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5 MB)"); return; }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("appointment-references").upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type,
+    });
+    setUploading(false);
+    if (error) { toast.error("Falha ao enviar imagem"); return; }
+    setReferencePath(path);
+    setPreviewUrl(URL.createObjectURL(file));
+    toast.success("Imagem enviada");
+  };
+
+  const clearImage = () => {
+    setReferencePath(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  return (
+    <div>
+      <button onClick={onBack} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Voltar
+      </button>
+      <h2 className="font-display text-3xl mb-2">Personalize seu {service.name.toLowerCase()}</h2>
+      <p className="text-sm text-muted-foreground mb-6">Escolha o estilo desejado e, se quiser, envie uma foto de referência.</p>
+
+      {hasVariants && (
+        <div className="mb-8">
+          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Estilo</Label>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {variants!.map((v) => {
+              const sel = variant?.id === v.id;
+              return (
+                <button key={v.id} type="button" onClick={() => setVariant(sel ? null : v)}
+                  className={`text-left rounded-lg border p-3 transition ${sel ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="font-medium">{v.name}</div>
+                      {v.description && <div className="text-xs text-muted-foreground mt-1">{v.description}</div>}
+                    </div>
+                    {v.extra_price_cents > 0 && (
+                      <Badge variant="outline" className="border-primary/40 text-primary shrink-0">+{formatPrice(v.extra_price_cents)}</Badge>
+                    )}
+                    {sel && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {isLoading && <p className="text-xs text-muted-foreground mt-2">Carregando estilos…</p>}
+          <p className="mt-2 text-[11px] text-muted-foreground">Opcional — pule se preferir combinar diretamente com o profissional.</p>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+          <ImageIcon className="inline h-3 w-3 mr-1" /> Foto de referência (opcional)
+        </Label>
+        {referencePath ? (
+          <div className="mt-3 flex items-center gap-4 rounded-lg border border-border p-3">
+            {previewUrl && <img src={previewUrl} alt="Referência" className="h-20 w-20 rounded-md object-cover border border-primary/30" />}
+            <div className="flex-1 text-sm">
+              <div className="text-foreground">Imagem enviada</div>
+              <div className="text-xs text-muted-foreground">O profissional visualizará antes do atendimento.</div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearImage}><X className="h-4 w-4" /> Remover</Button>
+          </div>
+        ) : (
+          <label className="mt-3 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-6 cursor-pointer hover:border-primary/50 transition">
+            <Upload className="h-6 w-6 text-primary/70" />
+            <div className="text-sm text-foreground">{uploading ? "Enviando…" : "Toque para enviar uma foto"}</div>
+            <div className="text-[11px] text-muted-foreground">JPG, PNG ou WebP · até 5 MB</div>
+            <input type="file" accept="image/*" className="hidden" disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
+          </label>
+        )}
+      </div>
+
+      <div className="mb-8">
+        <Label htmlFor="style-notes" className="text-xs uppercase tracking-widest text-muted-foreground">Observações de estilo (opcional)</Label>
+        <Textarea id="style-notes" value={styleNotes} maxLength={500}
+          onChange={(e) => setStyleNotes(e.target.value)}
+          placeholder="Ex: quero degradê baixo, barba média, risca lateral…"
+          className="mt-2" />
+      </div>
+
+      <Button className="bg-primary text-primary-foreground hover:bg-primary/90" size="lg" onClick={onNext} disabled={uploading}>
+        Continuar <ChevronRight className="ml-1 h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
