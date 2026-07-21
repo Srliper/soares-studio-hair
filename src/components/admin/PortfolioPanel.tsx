@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GalleryHorizontal, Plus, Trash2, Upload, Check, EyeOff, Clock } from "lucide-react";
 import { categoryLabel, type ServiceCategory } from "@/lib/format";
 
@@ -31,6 +31,33 @@ export function PortfolioPanel({ restrictToProfessionalId, isAdmin }: { restrict
   const [afterFile, setAfterFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState<"all" | Status>("all");
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("portfolio-drafts")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "portfolio_items", filter: "status=eq.rascunho" },
+        async (payload) => {
+          const row: any = payload.new;
+          let proName = "Profissional";
+          if (row?.professional_id) {
+            const { data } = await supabase.from("professionals").select("name").eq("id", row.professional_id).maybeSingle();
+            if (data?.name) proName = data.name;
+          }
+          toast.info("Novo rascunho na galeria", {
+            description: `${proName} enviou "${row?.title || categoryLabel[row?.category as ServiceCategory] || "novo item"}" para aprovação.`,
+            action: { label: "Ver", onClick: () => setFilter("rascunho") },
+          });
+          qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, qc]);
 
   const pros = useQuery({
     queryKey: ["portfolio-pros"],
