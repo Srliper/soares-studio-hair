@@ -23,9 +23,12 @@ export type Database = {
           end_at: string
           id: string
           professional_id: string
+          reference_image_url: string | null
           service_id: string
+          service_variant_id: string | null
           start_at: string
           status: Database["public"]["Enums"]["appointment_status"]
+          style_notes: string | null
         }
         Insert: {
           client_name: string
@@ -35,9 +38,12 @@ export type Database = {
           end_at: string
           id?: string
           professional_id: string
+          reference_image_url?: string | null
           service_id: string
+          service_variant_id?: string | null
           start_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          style_notes?: string | null
         }
         Update: {
           client_name?: string
@@ -47,9 +53,12 @@ export type Database = {
           end_at?: string
           id?: string
           professional_id?: string
+          reference_image_url?: string | null
           service_id?: string
+          service_variant_id?: string | null
           start_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          style_notes?: string | null
         }
         Relationships: [
           {
@@ -71,6 +80,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_variant_id_fkey"
+            columns: ["service_variant_id"]
+            isOneToOne: false
+            referencedRelation: "service_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -310,6 +326,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_variants: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          extra_price_cents: number
+          id: string
+          name: string
+          service_id: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          extra_price_cents?: number
+          id?: string
+          name: string
+          service_id: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          extra_price_cents?: number
+          id?: string
+          name?: string
+          service_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_variants_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
