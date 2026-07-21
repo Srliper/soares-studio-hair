@@ -18,6 +18,7 @@ import { CustomersPanel } from "@/components/admin/CustomersPanel";
 import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
 import { TimeBlocksPanel } from "@/components/admin/TimeBlocksPanel";
 import { ReminderPanel } from "@/components/admin/ReminderPanel";
+import { PortfolioPanel } from "@/components/admin/PortfolioPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -75,6 +76,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
             <TabsTrigger value="blocks"><Calendar className="h-4 w-4 mr-1" /> Bloqueios</TabsTrigger>
+            <TabsTrigger value="portfolio"><ImageIcon className="h-4 w-4 mr-1" /> Antes/Depois</TabsTrigger>
             {isAdmin && <TabsTrigger value="codes"><ShieldAlert className="h-4 w-4 mr-1" /> Códigos de vínculo</TabsTrigger>}
             {isAdmin && <TabsTrigger value="customers"><Users className="h-4 w-4 mr-1" /> Clientes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reengagement"><Bell className="h-4 w-4 mr-1" /> Reengajamento</TabsTrigger>}
@@ -83,6 +85,7 @@ function AdminPage() {
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           <TabsContent value="blocks"><TimeBlocksPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
+          <TabsContent value="portfolio"><PortfolioPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
           {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
