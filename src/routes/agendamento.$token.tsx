@@ -44,7 +44,7 @@ function ManagePage() {
 
   const cancel = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("cancel_appointment_by_token", { _token: token, _reason: null });
+      const { error } = await supabase.rpc("cancel_appointment_by_token", { _token: token });
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Agendamento cancelado"); qc.invalidateQueries({ queryKey: ["apt-by-token", token] }); },
