@@ -136,7 +136,7 @@ export function PortfolioPanel({ restrictToProfessionalId }: { restrictToProfess
             <Select value={category} onValueChange={(v) => setCategory(v as ServiceCategory)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{categoryLabel(c)}</SelectItem>)}
+                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{categoryLabel[c]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -203,7 +203,7 @@ function PortfolioItemCard({ item, onToggle, onDelete }: any) {
         {urls?.after ? <img src={urls.after} alt="Depois" className="aspect-square rounded object-cover" /> : <div className="aspect-square rounded bg-muted/40" />}
       </div>
       <div className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">
-        {item.professionals?.name} · {categoryLabel(item.category)}
+        {item.professionals?.name} · {categoryLabel[item.category as ServiceCategory]}
       </div>
       {item.title && <div className="mt-1 text-sm font-medium">{item.title}</div>}
       <div className="mt-2 flex justify-end gap-1">
