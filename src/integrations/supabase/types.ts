@@ -601,8 +601,8 @@ export type Database = {
         Returns: undefined
       }
       cancel_appointment_by_token: {
-        Args: { _reason?: string; _token: string }
-        Returns: Json
+        Args: { _token: string }
+        Returns: undefined
       }
       claim_professional: { Args: { _code: string }; Returns: string }
       get_appointment_by_token: { Args: { _token: string }; Returns: Json }
@@ -616,7 +616,7 @@ export type Database = {
       owns_professional: { Args: { _prof_id: string }; Returns: boolean }
       reschedule_appointment_by_token: {
         Args: { _new_start: string; _token: string }
-        Returns: Json
+        Returns: undefined
       }
     }
     Enums: {
