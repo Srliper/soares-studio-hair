@@ -589,8 +589,9 @@ function StepConfirm({
           )}
           {referencePath && (
             <div className="pt-1">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Referência</div>
-              <ReferenceThumb path={referencePath} />
+              <div className="flex items-center gap-2 text-xs text-primary">
+                <ImageIcon className="h-3 w-3" /> Foto de referência anexada
+              </div>
             </div>
           )}
           <Row label="Duração" value={`${service.duration_minutes} min`} />
@@ -719,17 +720,6 @@ function StepStyle({
   );
 }
 
-function ReferenceThumb({ path }: { path: string }) {
-  const { data: url } = useQuery({
-    queryKey: ["ref-signed", path],
-    queryFn: async () => {
-      const { data } = await supabase.storage.from("appointment-references").createSignedUrl(path, 3600);
-      return data?.signedUrl ?? null;
-    },
-  });
-  if (!url) return <div className="h-20 w-20 rounded-md border border-border bg-muted/20 animate-pulse" />;
-  return <img src={url} alt="Referência" className="h-24 w-24 rounded-md object-cover border border-primary/30" />;
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
