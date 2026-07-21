@@ -899,7 +899,8 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SuccessScreen({ onNew, pro, service, day, slot }: any) {
+function SuccessScreen({ onNew, pro, service, day, slot, manageToken }: any) {
+  const manageUrl = manageToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/agendamento/${manageToken}` : null;
   return (
     <section className="mx-auto max-w-2xl px-4 py-24 text-center">
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 gold-border">
@@ -911,6 +912,13 @@ function SuccessScreen({ onNew, pro, service, day, slot }: any) {
         <strong className="text-foreground">{new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })} às {slot}</strong> foi registrado.
       </p>
       <p className="mt-2 text-sm text-muted-foreground">Em breve entraremos em contato para confirmar.</p>
+      {manageUrl && (
+        <div className="mt-6 rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Guarde este link</div>
+          <a href={manageUrl} className="text-primary underline underline-offset-4 break-all">{manageUrl}</a>
+          <p className="mt-2 text-xs text-muted-foreground">Você pode reagendar ou cancelar por aqui a qualquer momento.</p>
+        </div>
+      )}
       <Button onClick={onNew} className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90">Fazer outro agendamento</Button>
     </section>
   );
