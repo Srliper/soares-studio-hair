@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatPrice, formatTime, categoryLabel, type ServiceCategory } from "@/lib/format";
-import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users } from "lucide-react";
+import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users, Image as ImageIcon, Palette } from "lucide-react";
 import { Bell } from "lucide-react";
 import { CustomersPanel } from "@/components/admin/CustomersPanel";
 import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
@@ -337,7 +337,7 @@ function AppointmentsPanel() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-appointments", filter],
     queryFn: async () => {
-      let q = supabase.from("appointments").select("*, professionals(name), services(name, price_cents)").order("start_at", { ascending: true });
+      let q = supabase.from("appointments").select("*, professionals(name), services(name, price_cents), service_variants(name, extra_price_cents)").order("start_at", { ascending: true });
       if (filter === "upcoming") q = q.gte("start_at", new Date().toISOString());
       const { data, error } = await q;
       if (error) throw error;
@@ -384,12 +384,17 @@ function AppointmentsPanel() {
                   </div>
                   <div className="mt-2 text-sm">
                     <div><strong>{a.services?.name}</strong> — {a.professionals?.name}</div>
+                    {a.service_variants?.name && (
+                      <div className="mt-1"><Badge variant="outline" className="border-primary/40 text-primary"><Palette className="h-3 w-3 mr-1" />{a.service_variants.name}</Badge></div>
+                    )}
                     <div className="text-muted-foreground flex items-center gap-3 mt-1">
                       <span><User className="inline h-3 w-3 mr-1" />{a.client_name}</span>
                       <span><Phone className="inline h-3 w-3 mr-1" />{a.client_phone}</span>
                       <span className="text-primary">{formatPrice(a.services?.price_cents ?? 0)}</span>
                     </div>
                     {a.client_notes && <div className="mt-2 text-xs text-muted-foreground italic">"{a.client_notes}"</div>}
+                    {a.style_notes && <div className="mt-1 text-xs text-primary/80 italic">Estilo: "{a.style_notes}"</div>}
+                    {a.reference_image_url && <AppointmentReferenceImage path={a.reference_image_url} />}
                   </div>
                 </div>
                 <div className="flex gap-1">
