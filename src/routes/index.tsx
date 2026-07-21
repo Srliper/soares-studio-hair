@@ -637,8 +637,44 @@ function StepStyle({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState<"all" | "included" | "upgrade">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const hasVariants = (variants?.length ?? 0) > 0;
+
+  // Categorias derivadas por palavras-chave no nome/descrição da variação.
+  // Cobre tanto cortes masculinos quanto femininos, além de barba.
+  const CATEGORY_KEYWORDS: Record<string, string[]> = {
+    "Degradê / Fade": ["degrade", "degradê", "fade", "navalhado"],
+    "Social / Clássico": ["social", "classic", "clássic", "executivo"],
+    "Undercut / Militar": ["undercut", "militar", "buzz"],
+    "Middle Part / Modernos": ["middle", "mullet", "moderno", "textur"],
+    "Infantil": ["infantil", "kids", "crianç"],
+    "Long Bob / Chanel": ["bob", "chanel", "long bob"],
+    "Repicado / Camadas": ["repicad", "camad", "long layer"],
+    "Franja": ["franja", "bang"],
+    "Escova / Finalização": ["escova", "finaliz", "brushing"],
+    "Repontas / Manutenção": ["repontas", "pontas", "manutenç"],
+    "Barba": ["barba", "italiana", "espartana", "lenhador"],
+  };
+
+  const variantCategory = (v: ServiceVariant): string | null => {
+    const hay = `${v.name} ${v.description ?? ""}`.toLowerCase();
+    for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
+      if (kws.some((k) => hay.includes(k))) return cat;
+    }
+    return null;
+  };
+
+  const availableCategories = useMemo(() => {
+    const counts = new Map<string, number>();
+    (variants ?? []).forEach((v) => {
+      const c = variantCategory(v);
+      if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+    });
+    // só mostra chips quando há pelo menos 2 categorias distintas com match
+    return counts.size >= 2 ? Array.from(counts.entries()) : [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variants]);
 
   const filteredVariants = useMemo(() => {
     if (!variants) return [];
@@ -646,11 +682,13 @@ function StepStyle({
     return variants.filter((v) => {
       if (priceFilter === "included" && v.extra_price_cents > 0) return false;
       if (priceFilter === "upgrade" && v.extra_price_cents === 0) return false;
+      if (categoryFilter !== "all" && variantCategory(v) !== categoryFilter) return false;
       if (!q) return true;
       const hay = `${v.name} ${v.description ?? ""}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [variants, query, priceFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variants, query, priceFilter, categoryFilter]);
 
   const hasUpgrade = useMemo(() => (variants ?? []).some((v) => v.extra_price_cents > 0), [variants]);
 
@@ -740,6 +778,38 @@ function StepStyle({
             )}
           </div>
 
+          {availableCategories.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrar por tipo de corte">
+              <button
+                type="button"
+                onClick={() => setCategoryFilter("all")}
+                aria-pressed={categoryFilter === "all"}
+                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                  categoryFilter === "all"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                Todos os tipos
+              </button>
+              {availableCategories.map(([cat, count]) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat)}
+                  aria-pressed={categoryFilter === cat}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                    categoryFilter === cat
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {cat} <span className="opacity-60">({count})</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {filteredVariants.map((v) => {
               const sel = variant?.id === v.id;
@@ -763,7 +833,7 @@ function StepStyle({
           {isLoading && <p className="text-xs text-muted-foreground mt-2">Carregando estilos…</p>}
           {!isLoading && filteredVariants.length === 0 && (
             <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-              Nenhum estilo encontrado. <button type="button" onClick={() => { setQuery(""); setPriceFilter("all"); }} className="text-primary underline underline-offset-2">Limpar filtros</button>
+              Nenhum estilo encontrado. <button type="button" onClick={() => { setQuery(""); setPriceFilter("all"); setCategoryFilter("all"); }} className="text-primary underline underline-offset-2">Limpar filtros</button>
             </div>
           )}
           <p className="mt-2 text-[11px] text-muted-foreground">Opcional — pule se preferir combinar diretamente com o profissional.</p>
