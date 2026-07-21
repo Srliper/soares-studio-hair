@@ -126,13 +126,21 @@ function useBusySlots(professionalId?: string, day?: string) {
     queryFn: async () => {
       const start = new Date(day + "T00:00:00");
       const end = new Date(day + "T23:59:59");
-      const { data, error } = await supabase.from("appointments_busy")
-        .select("start_at,end_at")
-        .eq("professional_id", professionalId!)
-        .gte("start_at", start.toISOString())
-        .lte("start_at", end.toISOString());
-      if (error) throw error;
-      return (data ?? []) as { start_at: string; end_at: string }[];
+      const [busyRes, blocksRes] = await Promise.all([
+        supabase.from("appointments_busy")
+          .select("start_at,end_at")
+          .eq("professional_id", professionalId!)
+          .gte("start_at", start.toISOString())
+          .lte("start_at", end.toISOString()),
+        supabase.from("time_blocks")
+          .select("start_at,end_at")
+          .eq("professional_id", professionalId!)
+          .lte("start_at", end.toISOString())
+          .gte("end_at", start.toISOString()),
+      ]);
+      if (busyRes.error) throw busyRes.error;
+      if (blocksRes.error) throw blocksRes.error;
+      return [...(busyRes.data ?? []), ...(blocksRes.data ?? [])] as { start_at: string; end_at: string }[];
     },
   });
 }
