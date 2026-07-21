@@ -340,6 +340,16 @@ function ClaimAuditLog() {
 function AppointmentsPanel() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"upcoming" | "all">("upcoming");
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-appointments-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, (payload) => {
+        qc.invalidateQueries({ queryKey: ["admin-appointments"] });
+        if (payload.eventType === "INSERT") toast.success("Novo agendamento recebido!");
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-appointments", filter],
     queryFn: async () => {
