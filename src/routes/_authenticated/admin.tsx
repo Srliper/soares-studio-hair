@@ -430,6 +430,23 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="outline" className={map[status]}>{status}</Badge>;
 }
 
+function AppointmentReferenceImage({ path }: { path: string }) {
+  const { data: url } = useQuery({
+    queryKey: ["appt-ref", path],
+    queryFn: async () => {
+      const { data } = await supabase.storage.from("appointment-references").createSignedUrl(path, 3600);
+      return data?.signedUrl ?? null;
+    },
+  });
+  if (!url) return <div className="mt-2 h-24 w-24 rounded-md border border-border bg-muted/20 animate-pulse" />;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+      <img src={url} alt="Referência do cliente" className="h-24 w-24 rounded-md object-cover border border-primary/30 hover:border-primary transition" />
+      <div className="mt-1 text-[10px] uppercase tracking-widest text-primary/80 flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Referência</div>
+    </a>
+  );
+}
+
 // ------- Services -------
 function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId: string | null }) {
   const qc = useQueryClient();
