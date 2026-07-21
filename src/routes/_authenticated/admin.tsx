@@ -16,6 +16,8 @@ import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, Sh
 import { Bell } from "lucide-react";
 import { CustomersPanel } from "@/components/admin/CustomersPanel";
 import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
+import { TimeBlocksPanel } from "@/components/admin/TimeBlocksPanel";
+import { ReminderPanel } from "@/components/admin/ReminderPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -72,15 +74,19 @@ function AdminPage() {
           <TabsList>
             {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
+            <TabsTrigger value="blocks"><Calendar className="h-4 w-4 mr-1" /> Bloqueios</TabsTrigger>
             {isAdmin && <TabsTrigger value="codes"><ShieldAlert className="h-4 w-4 mr-1" /> Códigos de vínculo</TabsTrigger>}
             {isAdmin && <TabsTrigger value="customers"><Users className="h-4 w-4 mr-1" /> Clientes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reengagement"><Bell className="h-4 w-4 mr-1" /> Reengajamento</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="reminders"><Bell className="h-4 w-4 mr-1" /> Lembretes</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
+          <TabsContent value="blocks"><TimeBlocksPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
           {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="reminders"><ReminderPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>
@@ -334,6 +340,16 @@ function ClaimAuditLog() {
 function AppointmentsPanel() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"upcoming" | "all">("upcoming");
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-appointments-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, (payload) => {
+        qc.invalidateQueries({ queryKey: ["admin-appointments"] });
+        if (payload.eventType === "INSERT") toast.success("Novo agendamento recebido!");
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-appointments", filter],
     queryFn: async () => {

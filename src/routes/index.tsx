@@ -126,13 +126,21 @@ function useBusySlots(professionalId?: string, day?: string) {
     queryFn: async () => {
       const start = new Date(day + "T00:00:00");
       const end = new Date(day + "T23:59:59");
-      const { data, error } = await supabase.from("appointments_busy")
-        .select("start_at,end_at")
-        .eq("professional_id", professionalId!)
-        .gte("start_at", start.toISOString())
-        .lte("start_at", end.toISOString());
-      if (error) throw error;
-      return (data ?? []) as { start_at: string; end_at: string }[];
+      const [busyRes, blocksRes] = await Promise.all([
+        supabase.from("appointments_busy")
+          .select("start_at,end_at")
+          .eq("professional_id", professionalId!)
+          .gte("start_at", start.toISOString())
+          .lte("start_at", end.toISOString()),
+        supabase.from("time_blocks")
+          .select("start_at,end_at")
+          .eq("professional_id", professionalId!)
+          .lte("start_at", end.toISOString())
+          .gte("end_at", start.toISOString()),
+      ]);
+      if (busyRes.error) throw busyRes.error;
+      if (blocksRes.error) throw blocksRes.error;
+      return [...(busyRes.data ?? []), ...(blocksRes.data ?? [])] as { start_at: string; end_at: string }[];
     },
   });
 }
@@ -151,18 +159,19 @@ function Home() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [manageToken, setManageToken] = useState<string | null>(null);
 
   const reset = () => {
     setStep(0); setPro(null); setService(null); setVariant(null);
     setReferencePath(null); setStyleNotes(""); setDay(""); setSlot("");
-    setName(""); setPhone(""); setNotes(""); setDone(false);
+    setName(""); setPhone(""); setNotes(""); setDone(false); setManageToken(null);
   };
 
   return (
     <div className="min-h-screen">
       <Header />
       {done ? (
-        <SuccessScreen onNew={reset} pro={pro!} service={service!} day={day} slot={slot} />
+        <SuccessScreen onNew={reset} pro={pro!} service={service!} day={day} slot={slot} manageToken={manageToken} />
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
@@ -218,16 +227,17 @@ function Home() {
                         setSubmitting(true);
                         const start = new Date(`${day}T${slot}:00`);
                         const end = new Date(start.getTime() + service.duration_minutes * 60000);
-                        const { error } = await supabase.from("appointments").insert({
+                        const { data: inserted, error } = await supabase.from("appointments").insert({
                           professional_id: pro.id, service_id: service.id,
                           service_variant_id: variant?.id ?? null,
                           reference_image_url: referencePath,
                           style_notes: styleNotes.trim() || null,
                           client_name: name, client_phone: phone, client_notes: notes || null,
                           start_at: start.toISOString(), end_at: end.toISOString(), status: "pendente",
-                        });
+                        }).select("manage_token").single();
                         setSubmitting(false);
                         if (error) { toast.error("Não foi possível agendar. Tente outro horário."); return; }
+                        setManageToken((inserted as any)?.manage_token ?? null);
                         setDone(true);
                       }} />
                   )}
@@ -889,7 +899,8 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SuccessScreen({ onNew, pro, service, day, slot }: any) {
+function SuccessScreen({ onNew, pro, service, day, slot, manageToken }: any) {
+  const manageUrl = manageToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/agendamento/${manageToken}` : null;
   return (
     <section className="mx-auto max-w-2xl px-4 py-24 text-center">
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 gold-border">
@@ -901,6 +912,13 @@ function SuccessScreen({ onNew, pro, service, day, slot }: any) {
         <strong className="text-foreground">{new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })} às {slot}</strong> foi registrado.
       </p>
       <p className="mt-2 text-sm text-muted-foreground">Em breve entraremos em contato para confirmar.</p>
+      {manageUrl && (
+        <div className="mt-6 rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Guarde este link</div>
+          <a href={manageUrl} className="text-primary underline underline-offset-4 break-all">{manageUrl}</a>
+          <p className="mt-2 text-xs text-muted-foreground">Você pode reagendar ou cancelar por aqui a qualquer momento.</p>
+        </div>
+      )}
       <Button onClick={onNew} className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90">Fazer outro agendamento</Button>
     </section>
   );

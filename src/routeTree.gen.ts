@@ -13,7 +13,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicHooksReminderRouteImport } from './routes/api/public/hooks/reminder'
 import { Route as ApiPublicHooksReengagementRouteImport } from './routes/api/public/hooks/reengagement'
 
 const AuthRoute = AuthRouteImport.update({
@@ -35,10 +37,20 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgendamentoTokenRoute = AgendamentoTokenRouteImport.update({
+  id: '/agendamento/$token',
+  path: '/agendamento/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicHooksReminderRoute = ApiPublicHooksReminderRouteImport.update({
+  id: '/api/public/hooks/reminder',
+  path: '/api/public/hooks/reminder',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksReengagementRoute =
   ApiPublicHooksReengagementRouteImport.update({
@@ -51,15 +63,19 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -67,8 +83,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -76,26 +94,39 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/agendamento/$token'
     | '/api/chat'
     | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/api/chat' | '/api/public/hooks/reengagement'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/agendamento/$token'
+    | '/api/chat'
+    | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/agendamento/$token'
     | '/api/chat'
     | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  AgendamentoTokenRoute: typeof AgendamentoTokenRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
+  ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,12 +159,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agendamento/$token': {
+      id: '/agendamento/$token'
+      path: '/agendamento/$token'
+      fullPath: '/agendamento/$token'
+      preLoaderRoute: typeof AgendamentoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/hooks/reminder': {
+      id: '/api/public/hooks/reminder'
+      path: '/api/public/hooks/reminder'
+      fullPath: '/api/public/hooks/reminder'
+      preLoaderRoute: typeof ApiPublicHooksReminderRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/reengagement': {
       id: '/api/public/hooks/reengagement'
@@ -160,19 +205,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  AgendamentoTokenRoute: AgendamentoTokenRoute,
   ApiChatRoute: ApiChatRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
+  ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
