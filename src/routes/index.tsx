@@ -550,8 +550,9 @@ function StepSlot({
 }
 
 function StepConfirm({
-  pro, service, day, slot, name, setName, phone, setPhone, notes, setNotes, submitting, onBack, onSubmit,
+  pro, service, variant, referencePath, styleNotes, day, slot, name, setName, phone, setPhone, notes, setNotes, submitting, onBack, onSubmit,
 }: any) {
+  const totalCents = service.price_cents + (variant?.extra_price_cents ?? 0);
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div>
@@ -582,18 +583,152 @@ function StepConfirm({
         <div className="space-y-3 text-sm">
           <Row label="Profissional" value={pro.name} />
           <Row label="Serviço" value={service.name} />
+          {variant && <Row label="Estilo" value={variant.name + (variant.extra_price_cents ? ` (+${formatPrice(variant.extra_price_cents)})` : "")} />}
+          {styleNotes && (
+            <div className="text-xs text-muted-foreground italic pt-1">"{styleNotes}"</div>
+          )}
+          {referencePath && (
+            <div className="pt-1">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Referência</div>
+              <ReferenceThumb path={referencePath} />
+            </div>
+          )}
           <Row label="Duração" value={`${service.duration_minutes} min`} />
           <Row label="Data" value={new Date(day + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })} />
           <Row label="Horário" value={slot} />
           <div className="border-t border-border/50 my-4" />
           <div className="flex justify-between items-baseline">
             <span className="text-muted-foreground">Total</span>
-            <span className="font-display text-3xl gold-gradient">{formatPrice(service.price_cents)}</span>
+            <span className="font-display text-3xl gold-gradient">{formatPrice(totalCents)}</span>
           </div>
         </div>
       </Card>
     </div>
   );
+}
+
+function StepStyle({
+  service, variant, setVariant, referencePath, setReferencePath, styleNotes, setStyleNotes, onBack, onNext,
+}: {
+  service: Service;
+  variant: ServiceVariant | null; setVariant: (v: ServiceVariant | null) => void;
+  referencePath: string | null; setReferencePath: (p: string | null) => void;
+  styleNotes: string; setStyleNotes: (s: string) => void;
+  onBack: () => void; onNext: () => void;
+}) {
+  const { data: variants, isLoading } = useServiceVariants(service.id);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const hasVariants = (variants?.length ?? 0) > 0;
+
+  const onFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Selecione uma imagem"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5 MB)"); return; }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("appointment-references").upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type,
+    });
+    setUploading(false);
+    if (error) { toast.error("Falha ao enviar imagem"); return; }
+    setReferencePath(path);
+    setPreviewUrl(URL.createObjectURL(file));
+    toast.success("Imagem enviada");
+  };
+
+  const clearImage = () => {
+    setReferencePath(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  return (
+    <div>
+      <button onClick={onBack} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Voltar
+      </button>
+      <h2 className="font-display text-3xl mb-2">Personalize seu {service.name.toLowerCase()}</h2>
+      <p className="text-sm text-muted-foreground mb-6">Escolha o estilo desejado e, se quiser, envie uma foto de referência.</p>
+
+      {hasVariants && (
+        <div className="mb-8">
+          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Estilo</Label>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {variants!.map((v) => {
+              const sel = variant?.id === v.id;
+              return (
+                <button key={v.id} type="button" onClick={() => setVariant(sel ? null : v)}
+                  className={`text-left rounded-lg border p-3 transition ${sel ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="font-medium">{v.name}</div>
+                      {v.description && <div className="text-xs text-muted-foreground mt-1">{v.description}</div>}
+                    </div>
+                    {v.extra_price_cents > 0 && (
+                      <Badge variant="outline" className="border-primary/40 text-primary shrink-0">+{formatPrice(v.extra_price_cents)}</Badge>
+                    )}
+                    {sel && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {isLoading && <p className="text-xs text-muted-foreground mt-2">Carregando estilos…</p>}
+          <p className="mt-2 text-[11px] text-muted-foreground">Opcional — pule se preferir combinar diretamente com o profissional.</p>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+          <ImageIcon className="inline h-3 w-3 mr-1" /> Foto de referência (opcional)
+        </Label>
+        {referencePath ? (
+          <div className="mt-3 flex items-center gap-4 rounded-lg border border-border p-3">
+            {previewUrl && <img src={previewUrl} alt="Referência" className="h-20 w-20 rounded-md object-cover border border-primary/30" />}
+            <div className="flex-1 text-sm">
+              <div className="text-foreground">Imagem enviada</div>
+              <div className="text-xs text-muted-foreground">O profissional visualizará antes do atendimento.</div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearImage}><X className="h-4 w-4" /> Remover</Button>
+          </div>
+        ) : (
+          <label className="mt-3 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-6 cursor-pointer hover:border-primary/50 transition">
+            <Upload className="h-6 w-6 text-primary/70" />
+            <div className="text-sm text-foreground">{uploading ? "Enviando…" : "Toque para enviar uma foto"}</div>
+            <div className="text-[11px] text-muted-foreground">JPG, PNG ou WebP · até 5 MB</div>
+            <input type="file" accept="image/*" className="hidden" disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
+          </label>
+        )}
+      </div>
+
+      <div className="mb-8">
+        <Label htmlFor="style-notes" className="text-xs uppercase tracking-widest text-muted-foreground">Observações de estilo (opcional)</Label>
+        <Textarea id="style-notes" value={styleNotes} maxLength={500}
+          onChange={(e) => setStyleNotes(e.target.value)}
+          placeholder="Ex: quero degradê baixo, barba média, risca lateral…"
+          className="mt-2" />
+      </div>
+
+      <Button className="bg-primary text-primary-foreground hover:bg-primary/90" size="lg" onClick={onNext} disabled={uploading}>
+        Continuar <ChevronRight className="ml-1 h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+function ReferenceThumb({ path }: { path: string }) {
+  const { data: url } = useQuery({
+    queryKey: ["ref-signed", path],
+    queryFn: async () => {
+      const { data } = await supabase.storage.from("appointment-references").createSignedUrl(path, 3600);
+      return data?.signedUrl ?? null;
+    },
+  });
+  if (!url) return <div className="h-20 w-20 rounded-md border border-border bg-muted/20 animate-pulse" />;
+  return <img src={url} alt="Referência" className="h-24 w-24 rounded-md object-cover border border-primary/30" />;
 }
 
 function Row({ label, value }: { label: string; value: string }) {
