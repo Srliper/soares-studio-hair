@@ -159,18 +159,19 @@ function Home() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [manageToken, setManageToken] = useState<string | null>(null);
 
   const reset = () => {
     setStep(0); setPro(null); setService(null); setVariant(null);
     setReferencePath(null); setStyleNotes(""); setDay(""); setSlot("");
-    setName(""); setPhone(""); setNotes(""); setDone(false);
+    setName(""); setPhone(""); setNotes(""); setDone(false); setManageToken(null);
   };
 
   return (
     <div className="min-h-screen">
       <Header />
       {done ? (
-        <SuccessScreen onNew={reset} pro={pro!} service={service!} day={day} slot={slot} />
+        <SuccessScreen onNew={reset} pro={pro!} service={service!} day={day} slot={slot} manageToken={manageToken} />
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
@@ -226,16 +227,17 @@ function Home() {
                         setSubmitting(true);
                         const start = new Date(`${day}T${slot}:00`);
                         const end = new Date(start.getTime() + service.duration_minutes * 60000);
-                        const { error } = await supabase.from("appointments").insert({
+                        const { data: inserted, error } = await supabase.from("appointments").insert({
                           professional_id: pro.id, service_id: service.id,
                           service_variant_id: variant?.id ?? null,
                           reference_image_url: referencePath,
                           style_notes: styleNotes.trim() || null,
                           client_name: name, client_phone: phone, client_notes: notes || null,
                           start_at: start.toISOString(), end_at: end.toISOString(), status: "pendente",
-                        });
+                        }).select("manage_token").single();
                         setSubmitting(false);
                         if (error) { toast.error("Não foi possível agendar. Tente outro horário."); return; }
+                        setManageToken((inserted as any)?.manage_token ?? null);
                         setDone(true);
                       }} />
                   )}
