@@ -47,6 +47,8 @@ Dados do estúdio:
 - Endereço: R. Cel. Fernando Prestes, 622 - Centro, São Miguel Arcanjo, SP
 - Horário: Terça a Sábado, 09:00–19:00
 - WhatsApp: +55 15 99834-3669
+- Instagram: @afonsosoaresstudio (https://instagram.com/afonsosoaresstudio)
+- TikTok: @soareshair (https://www.tiktok.com/@soareshair)
 
 Catálogo atual de serviços e preços:
 ${catalog || "(catálogo indisponível no momento — sugira falar no WhatsApp para valores)"}
