@@ -465,6 +465,7 @@ function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId:
 
   const [editing, setEditing] = useState<any>(null);
   const [creating, setCreating] = useState<{ professional_id: string } | null>(null);
+  const [managingVariants, setManagingVariants] = useState<any>(null);
 
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("services").delete().eq("id", id); if (error) throw error; },
@@ -497,6 +498,9 @@ function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId:
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="font-display text-lg gold-gradient">{formatPrice(s.price_cents)}</div>
+                    <Button variant="ghost" size="icon" onClick={() => setManagingVariants(s)} title="Variantes de estilo">
+                      <Palette className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => setEditing(s)}><Edit className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => { if (confirm("Remover?")) del.mutate(s.id); }}>
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -516,7 +520,113 @@ function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId:
         service={editing}
         professionalId={creating?.professional_id}
       />
+      <VariantsDialog
+        open={!!managingVariants}
+        onOpenChange={(o) => { if (!o) setManagingVariants(null); }}
+        service={managingVariants}
+      />
     </div>
+  );
+}
+
+function VariantsDialog({ open, onOpenChange, service }: { open: boolean; onOpenChange: (o: boolean) => void; service: any }) {
+  const qc = useQueryClient();
+  const { data: variants, isLoading } = useQuery({
+    queryKey: ["variants-admin", service?.id],
+    enabled: !!service?.id,
+    queryFn: async () => (await supabase.from("service_variants").select("*").eq("service_id", service.id).order("sort_order")).data ?? [],
+  });
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [extraReais, setExtraReais] = useState("0");
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["variants-admin", service?.id] });
+    qc.invalidateQueries({ queryKey: ["service-variants", service?.id] });
+  };
+
+  const add = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error("Nome obrigatório");
+      const nextOrder = (variants?.length ?? 0) + 1;
+      const { error } = await supabase.from("service_variants").insert({
+        service_id: service.id,
+        name: name.trim(),
+        description: description.trim() || null,
+        extra_price_cents: Math.round(parseFloat(extraReais.replace(",", ".") || "0") * 100),
+        sort_order: nextOrder,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { setName(""); setDescription(""); setExtraReais("0"); invalidate(); toast.success("Estilo adicionado"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("service_variants").update({ active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from("service_variants").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => { invalidate(); toast.success("Removido"); },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Estilos de "{service?.name}"</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Ofereça variantes específicas (ex: "Degradê navalhado", "Barba italiana"). Cada uma pode ter preço adicional.
+          </p>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+            {variants?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum estilo ainda.</p>}
+            {variants?.map((v: any) => (
+              <div key={v.id} className={`flex items-start justify-between gap-2 rounded-md border p-3 ${v.active ? "border-border" : "border-border/40 opacity-60"}`}>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{v.name}</span>
+                    {v.extra_price_cents > 0 && (
+                      <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">+{formatPrice(v.extra_price_cents)}</Badge>
+                    )}
+                    {!v.active && <Badge variant="outline" className="text-[10px]">inativo</Badge>}
+                  </div>
+                  {v.description && <div className="text-xs text-muted-foreground mt-1">{v.description}</div>}
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => toggleActive.mutate({ id: v.id, active: !v.active })}>
+                    {v.active ? "Desativar" : "Ativar"}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => { if (confirm("Remover?")) del.mutate(v.id); }}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">Novo estilo</div>
+            <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Degradê navalhado" /></div>
+            <div><Label>Descrição (opcional)</Label><Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Detalhe curto" /></div>
+            <div><Label>Preço adicional (R$)</Label><Input type="number" step="0.01" value={extraReais} onChange={(e) => setExtraReais(e.target.value)} /></div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={() => add.mutate()} disabled={!name.trim() || add.isPending}>
+            <Plus className="h-4 w-4 mr-1" /> Adicionar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
