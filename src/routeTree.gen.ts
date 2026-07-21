@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -31,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EsperaTokenRoute = EsperaTokenRouteImport.update({
+  id: '/espera/$token',
+  path: '/espera/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
     | '/api/public/hooks/waitlist-slot-freed'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
     | '/api/public/hooks/waitlist-slot-freed'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
     | '/api/public/hooks/waitlist-slot-freed'
@@ -138,6 +150,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AgendamentoTokenRoute: typeof AgendamentoTokenRoute
   ApiChatRoute: typeof ApiChatRoute
+  EsperaTokenRoute: typeof EsperaTokenRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
   ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
   ApiPublicHooksWaitlistSlotFreedRoute: typeof ApiPublicHooksWaitlistSlotFreedRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/espera/$token': {
+      id: '/espera/$token'
+      path: '/espera/$token'
+      fullPath: '/espera/$token'
+      preLoaderRoute: typeof EsperaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -228,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AgendamentoTokenRoute: AgendamentoTokenRoute,
   ApiChatRoute: ApiChatRoute,
+  EsperaTokenRoute: EsperaTokenRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
   ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
   ApiPublicHooksWaitlistSlotFreedRoute: ApiPublicHooksWaitlistSlotFreedRoute,
