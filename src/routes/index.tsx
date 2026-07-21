@@ -247,6 +247,7 @@ function Home() {
           </section>
         </>
       )}
+      <BeforeAfterGallery />
       <Footer />
     </div>
   );
