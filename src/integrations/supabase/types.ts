@@ -221,7 +221,11 @@ export type Database = {
           id: string
           notes: string | null
           professional_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           sort_order: number
+          status: Database["public"]["Enums"]["portfolio_status"]
           title: string | null
           updated_at: string
         }
@@ -234,7 +238,11 @@ export type Database = {
           id?: string
           notes?: string | null
           professional_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
+          status?: Database["public"]["Enums"]["portfolio_status"]
           title?: string | null
           updated_at?: string
         }
@@ -247,7 +255,11 @@ export type Database = {
           id?: string
           notes?: string | null
           professional_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
+          status?: Database["public"]["Enums"]["portfolio_status"]
           title?: string | null
           updated_at?: string
         }
@@ -679,6 +691,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "profissional"
       appointment_status: "pendente" | "confirmado" | "concluido" | "cancelado"
+      portfolio_status: "rascunho" | "aprovado" | "oculto"
       service_category:
         | "masculino"
         | "feminino"
@@ -815,6 +828,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "profissional"],
       appointment_status: ["pendente", "confirmado", "concluido", "cancelado"],
+      portfolio_status: ["rascunho", "aprovado", "oculto"],
       service_category: [
         "masculino",
         "feminino",
