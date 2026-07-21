@@ -53,8 +53,8 @@ export function PreLaunchPanel() {
         supabase.from("professionals").select("id,name,active", { count: "exact" }).eq("active", true),
         supabase.from("services").select("id,professional_id,active", { count: "exact" }).eq("active", true),
         supabase.from("portfolio_items").select("id", { count: "exact", head: true }).eq("status", "aprovado"),
-        supabase.from("reminder_settings").select("enabled,webhook_url").maybeSingle(),
-        supabase.from("reengagement_settings").select("enabled,webhook_url").maybeSingle(),
+        supabase.from("reminder_settings").select("enabled,message_template").maybeSingle(),
+        supabase.from("reengagement_settings").select("enabled,message_template").maybeSingle(),
         supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "admin"),
       ]);
 
@@ -99,18 +99,18 @@ export function PreLaunchPanel() {
         },
         {
           id: "reminder",
-          label: "Lembretes de 24h ativados",
-          ok: !!(reminderCfg.data?.enabled && reminderCfg.data?.webhook_url),
+          label: "Lembretes de 24h ativados com mensagem",
+          ok: !!(reminderCfg.data?.enabled && reminderCfg.data?.message_template?.trim()),
           detail: reminderCfg.data?.enabled
-            ? reminderCfg.data?.webhook_url ? "Ativo e com webhook" : "Ativo mas sem webhook"
+            ? reminderCfg.data?.message_template?.trim() ? "Ativo e com mensagem" : "Ativo mas sem mensagem"
             : "Desativado",
         },
         {
           id: "reengagement",
-          label: "Reengajamento configurado",
-          ok: !!(reengageCfg.data?.enabled && reengageCfg.data?.webhook_url),
+          label: "Reengajamento ativado com mensagem",
+          ok: !!(reengageCfg.data?.enabled && reengageCfg.data?.message_template?.trim()),
           detail: reengageCfg.data?.enabled
-            ? reengageCfg.data?.webhook_url ? "Ativo e com webhook" : "Ativo mas sem webhook"
+            ? reengageCfg.data?.message_template?.trim() ? "Ativo e com mensagem" : "Ativo mas sem mensagem"
             : "Desativado",
         },
       ];
