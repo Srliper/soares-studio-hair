@@ -1006,22 +1006,20 @@ function WaitlistCTA({ pro, service, day }: { pro: Professional; service: Servic
     if (name.trim().length < 2) return toast.error("Informe seu nome");
     if (phone.replace(/\D/g, "").length < 10) return toast.error("Telefone inválido");
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from("waitlist")
-      .insert({
-        professional_id: pro.id,
-        service_id: service.id,
-        client_name: name.trim(),
-        client_phone: phone.trim(),
-        desired_date: day,
-        notes: notes.trim() || null,
-        status: "aguardando",
-      })
-      .select("track_token")
-      .single();
+    const trackToken = crypto.randomUUID();
+    const { error } = await supabase.from("waitlist").insert({
+      professional_id: pro.id,
+      service_id: service.id,
+      client_name: name.trim(),
+      client_phone: phone.trim(),
+      desired_date: day,
+      notes: notes.trim() || null,
+      status: "aguardando",
+      track_token: trackToken,
+    });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    setDoneToken(data?.track_token ?? "");
+    setDoneToken(trackToken);
     toast.success("Você entrou na lista de espera!");
   };
 
