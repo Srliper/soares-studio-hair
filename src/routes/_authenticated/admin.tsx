@@ -21,6 +21,8 @@ import { ReminderPanel } from "@/components/admin/ReminderPanel";
 import { PortfolioPanel } from "@/components/admin/PortfolioPanel";
 import { PreLaunchPanel } from "@/components/admin/PreLaunchPanel";
 import { Rocket } from "lucide-react";
+import { WaitlistPanel } from "@/components/admin/WaitlistPanel";
+import { Clock as ClockIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -79,6 +81,7 @@ function AdminPage() {
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
             <TabsTrigger value="blocks"><Calendar className="h-4 w-4 mr-1" /> Bloqueios</TabsTrigger>
             <TabsTrigger value="portfolio"><ImageIcon className="h-4 w-4 mr-1" /> Antes/Depois</TabsTrigger>
+            <TabsTrigger value="waitlist"><ClockIcon className="h-4 w-4 mr-1" /> Lista de espera</TabsTrigger>
             {isAdmin && <TabsTrigger value="codes"><ShieldAlert className="h-4 w-4 mr-1" /> Códigos de vínculo</TabsTrigger>}
             {isAdmin && <TabsTrigger value="customers"><Users className="h-4 w-4 mr-1" /> Clientes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reengagement"><Bell className="h-4 w-4 mr-1" /> Reengajamento</TabsTrigger>}
@@ -89,6 +92,7 @@ function AdminPage() {
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           <TabsContent value="blocks"><TimeBlocksPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           <TabsContent value="portfolio"><PortfolioPanel restrictToProfessionalId={isAdmin ? null : professionalId} isAdmin={isAdmin} /></TabsContent>
+          <TabsContent value="waitlist"><WaitlistPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
           {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
