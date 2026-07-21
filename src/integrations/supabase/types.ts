@@ -16,14 +16,18 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          cancelled_at: string | null
+          cancelled_reason: string | null
           client_name: string
           client_notes: string | null
           client_phone: string
           created_at: string
           end_at: string
           id: string
+          manage_token: string
           professional_id: string
           reference_image_url: string | null
+          reminder_sent_at: string | null
           service_id: string
           service_variant_id: string | null
           start_at: string
@@ -31,14 +35,18 @@ export type Database = {
           style_notes: string | null
         }
         Insert: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
           client_name: string
           client_notes?: string | null
           client_phone: string
           created_at?: string
           end_at: string
           id?: string
+          manage_token?: string
           professional_id: string
           reference_image_url?: string | null
+          reminder_sent_at?: string | null
           service_id: string
           service_variant_id?: string | null
           start_at: string
@@ -46,14 +54,18 @@ export type Database = {
           style_notes?: string | null
         }
         Update: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
           client_name?: string
           client_notes?: string | null
           client_phone?: string
           created_at?: string
           end_at?: string
           id?: string
+          manage_token?: string
           professional_id?: string
           reference_image_url?: string | null
+          reminder_sent_at?: string | null
           service_id?: string
           service_variant_id?: string | null
           start_at?: string
@@ -327,6 +339,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_settings: {
+        Row: {
+          enabled: boolean
+          hours_before: number
+          id: number
+          message_template: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hours_before?: number
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hours_before?: number
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_variants: {
         Row: {
           active: boolean
@@ -412,6 +448,51 @@ export type Database = {
           },
           {
             foreignKeyName: "services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_blocks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_at: string
+          id: string
+          professional_id: string
+          reason: string | null
+          start_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_at: string
+          id?: string
+          professional_id: string
+          reason?: string | null
+          start_at: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_at?: string
+          id?: string
+          professional_id?: string
+          reason?: string | null
+          start_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_blocks_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_blocks_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals_public"
@@ -519,7 +600,12 @@ export type Database = {
         Args: { _pro_id: string }
         Returns: undefined
       }
+      cancel_appointment_by_token: {
+        Args: { _reason?: string; _token: string }
+        Returns: Json
+      }
       claim_professional: { Args: { _code: string }; Returns: string }
+      get_appointment_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -528,6 +614,10 @@ export type Database = {
         Returns: boolean
       }
       owns_professional: { Args: { _prof_id: string }; Returns: boolean }
+      reschedule_appointment_by_token: {
+        Args: { _new_start: string; _token: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "profissional"
