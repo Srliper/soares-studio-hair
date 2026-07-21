@@ -46,10 +46,30 @@ export function PortfolioPanel({ restrictToProfessionalId, isAdmin }: { restrict
             const { data } = await supabase.from("professionals").select("name").eq("id", row.professional_id).maybeSingle();
             if (data?.name) proName = data.name;
           }
-          toast.info("Novo rascunho na galeria", {
+          const toastId = toast.info("Novo rascunho na galeria", {
+            duration: 15000,
             description: `${proName} enviou "${row?.title || categoryLabel[row?.category as ServiceCategory] || "novo item"}" para aprovação.`,
-            action: { label: "Ver", onClick: () => setFilter("rascunho") },
+            action: {
+              label: "Aprovar",
+              onClick: async () => {
+                const { error } = await supabase.from("portfolio_items").update({ status: "aprovado" }).eq("id", row.id);
+                if (error) return toast.error(error.message);
+                toast.success("Item aprovado e publicado");
+                qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+                qc.invalidateQueries({ queryKey: ["portfolio-public"] });
+              },
+            },
+            cancel: {
+              label: "Ocultar",
+              onClick: async () => {
+                const { error } = await supabase.from("portfolio_items").update({ status: "oculto" }).eq("id", row.id);
+                if (error) return toast.error(error.message);
+                toast.success("Item ocultado");
+                qc.invalidateQueries({ queryKey: ["portfolio-items"] });
+              },
+            },
           });
+          void toastId;
           qc.invalidateQueries({ queryKey: ["portfolio-items"] });
         },
       )
