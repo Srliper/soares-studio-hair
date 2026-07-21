@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicHooksReminderRouteImport } from './routes/api/public/hooks/reminder'
 import { Route as ApiPublicHooksReengagementRouteImport } from './routes/api/public/hooks/reengagement'
 
 const AuthRoute = AuthRouteImport.update({
@@ -40,6 +41,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksReminderRoute = ApiPublicHooksReminderRouteImport.update({
+  id: '/api/public/hooks/reminder',
+  path: '/api/public/hooks/reminder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksReengagementRoute =
   ApiPublicHooksReengagementRouteImport.update({
     id: '/api/public/hooks/reengagement',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/api/chat': typeof ApiChatRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
+  '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,8 +87,15 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/chat'
     | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/api/chat' | '/api/public/hooks/reengagement'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/api/chat'
+    | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   id:
     | '__root__'
     | '/'
@@ -88,6 +104,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/api/chat'
     | '/api/public/hooks/reengagement'
+    | '/api/public/hooks/reminder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,6 +113,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
+  ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -135,6 +153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/reminder': {
+      id: '/api/public/hooks/reminder'
+      path: '/api/public/hooks/reminder'
+      fullPath: '/api/public/hooks/reminder'
+      preLoaderRoute: typeof ApiPublicHooksReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/reengagement': {
       id: '/api/public/hooks/reengagement'
       path: '/api/public/hooks/reengagement'
@@ -162,6 +187,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiChatRoute: ApiChatRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
+  ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
