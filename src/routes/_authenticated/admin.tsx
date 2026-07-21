@@ -85,7 +85,7 @@ function AdminPage() {
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
           <TabsContent value="blocks"><TimeBlocksPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
-          <TabsContent value="portfolio"><PortfolioPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
+          <TabsContent value="portfolio"><PortfolioPanel restrictToProfessionalId={isAdmin ? null : professionalId} isAdmin={isAdmin} /></TabsContent>
           {isAdmin && <TabsContent value="codes"><ClaimCodesPanel /></TabsContent>}
           {isAdmin && <TabsContent value="customers"><CustomersPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reengagement"><ReengagementPanel /></TabsContent>}
