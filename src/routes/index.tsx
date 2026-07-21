@@ -61,6 +61,10 @@ export const Route = createFileRoute("/")({
             },
           ],
           priceRange: "$$",
+          sameAs: [
+            "https://www.instagram.com/afonsosoaresstudio/",
+            "https://www.tiktok.com/@soareshair",
+          ],
         }),
       },
     ],
@@ -250,8 +254,11 @@ function Header() {
           <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-0.5">Hair Afonso &amp; Alexia</div>
         </div>
         <div className="flex justify-end items-center gap-4">
-          <a href="https://instagram.com/afonsosoaresstudio" target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-primary hover:text-primary/80">
+          <a href="https://instagram.com/afonsosoaresstudio" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hidden sm:inline text-xs uppercase tracking-widest text-primary hover:text-primary/80">
             Instagram
+          </a>
+          <a href="https://www.tiktok.com/@soareshair" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="hidden sm:inline text-xs uppercase tracking-widest text-primary hover:text-primary/80">
+            TikTok
           </a>
           <Link to="/auth" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
             Admin
@@ -351,6 +358,7 @@ function Collaborators() {
           image={afonsoImg}
           bio="Especialista em colorimetria, mechas e cortes femininos de alto padrão. Também referência em cortes masculinos clássicos e modernos, com anos de carreira dedicados a elevar a autoestima de cada cliente."
           instagram="@afonsosoaresstudio"
+          tiktok="@soareshair"
         />
         <ProfileCard
           role="Nail Designer, Maquiadora & Co-fundadora"
@@ -364,7 +372,7 @@ function Collaborators() {
   );
 }
 
-function ProfileCard({ role, name, bio, instagram, image }: { role: string; name: string; bio: string; instagram: string; image: string }) {
+function ProfileCard({ role, name, bio, instagram, tiktok, image }: { role: string; name: string; bio: string; instagram: string; tiktok?: string; image: string }) {
   return (
     <div>
       <div className="aspect-[4/5] w-full overflow-hidden gold-border rounded-sm">
@@ -374,9 +382,16 @@ function ProfileCard({ role, name, bio, instagram, image }: { role: string; name
       <h3 className="mt-3 font-display text-3xl gold-gradient">{name}</h3>
       <div className="mt-3 h-px w-16 bg-primary/40" />
       <p className="mt-5 text-sm leading-relaxed text-muted-foreground max-w-md">{bio}</p>
-      <a href={`https://instagram.com/${instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-xs uppercase tracking-[0.3em] text-primary hover:text-primary/80">
-        Instagram · {instagram}
-      </a>
+      <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
+        <a href={`https://instagram.com/${instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-[0.3em] text-primary hover:text-primary/80">
+          Instagram · {instagram}
+        </a>
+        {tiktok && (
+          <a href={`https://www.tiktok.com/@${tiktok.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-[0.3em] text-primary hover:text-primary/80">
+            TikTok · {tiktok}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
@@ -769,6 +784,13 @@ function Footer() {
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">IG</span>
             <a href="https://instagram.com/afonsosoaresstudio" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline underline-offset-4">
               @afonsosoaresstudio
+            </a>
+          </div>
+          <span className="hidden md:block h-4 w-px bg-border" />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">TikTok</span>
+            <a href="https://www.tiktok.com/@soareshair" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline underline-offset-4">
+              @soareshair
             </a>
           </div>
         </div>
