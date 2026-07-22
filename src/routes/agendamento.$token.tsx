@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { formatPrice, formatTime } from "@/lib/format";
 import { CalendarClock, XCircle, ArrowRight, Check } from "lucide-react";
+import { LoyaltyCard } from "@/components/LoyaltyCard";
 
 export const Route = createFileRoute("/agendamento/$token")({
   head: () => ({ meta: [{ title: "Meu agendamento — Studio Soares" }] }),
@@ -178,6 +179,7 @@ function ManagePage() {
             )}
           </Card>
         )}
+        {aptQ.data && <LoyaltyCard token={token} />}
       </main>
     </div>
   );

@@ -27,6 +27,8 @@ import { ReviewsPanel } from "@/components/admin/ReviewsPanel";
 import { Star } from "lucide-react";
 import { WeddingsPanel } from "@/components/admin/WeddingsPanel";
 import { Heart } from "lucide-react";
+import { LoyaltyPanel } from "@/components/admin/LoyaltyPanel";
+import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -92,6 +94,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="reminders"><Bell className="h-4 w-4 mr-1" /> Lembretes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="reviews"><Star className="h-4 w-4 mr-1" /> Avaliações</TabsTrigger>}
             {isAdmin && <TabsTrigger value="weddings"><Heart className="h-4 w-4 mr-1" /> Casamentos</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="loyalty"><Sparkles className="h-4 w-4 mr-1" /> Fidelidade</TabsTrigger>}
             {isAdmin && <TabsTrigger value="prelaunch"><Rocket className="h-4 w-4 mr-1" /> Pré-lançamento</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
@@ -105,6 +108,7 @@ function AdminPage() {
           {isAdmin && <TabsContent value="reminders"><ReminderPanel /></TabsContent>}
           {isAdmin && <TabsContent value="reviews"><ReviewsPanel /></TabsContent>}
           {isAdmin && <TabsContent value="weddings"><WeddingsPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="loyalty"><LoyaltyPanel /></TabsContent>}
           {isAdmin && <TabsContent value="prelaunch"><PreLaunchPanel /></TabsContent>}
         </Tabs>
       </main>
