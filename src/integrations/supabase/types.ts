@@ -735,6 +735,162 @@ export type Database = {
           },
         ]
       }
+      wedding_guests: {
+        Row: {
+          appointment_id: string | null
+          consent_at: string | null
+          created_at: string
+          end_at: string
+          guest_name: string
+          guest_phone: string
+          id: string
+          notes: string | null
+          package_id: string
+          professional_id: string
+          service_id: string
+          start_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          consent_at?: string | null
+          created_at?: string
+          end_at: string
+          guest_name: string
+          guest_phone: string
+          id?: string
+          notes?: string | null
+          package_id: string
+          professional_id: string
+          service_id: string
+          start_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          consent_at?: string | null
+          created_at?: string
+          end_at?: string
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          notes?: string | null
+          package_id?: string
+          professional_id?: string
+          service_id?: string
+          start_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wedding_guests_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wedding_guests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "wedding_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wedding_guests_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wedding_guests_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wedding_guests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wedding_packages: {
+        Row: {
+          block_end_at: string
+          block_start_at: string
+          bride_name: string
+          bride_phone: string
+          created_at: string
+          created_by: string | null
+          event_date: string
+          event_location: string | null
+          group_token: string
+          id: string
+          max_guests: number
+          notes: string | null
+          professional_id: string
+          status: Database["public"]["Enums"]["wedding_status"]
+          updated_at: string
+        }
+        Insert: {
+          block_end_at: string
+          block_start_at: string
+          bride_name: string
+          bride_phone: string
+          created_at?: string
+          created_by?: string | null
+          event_date: string
+          event_location?: string | null
+          group_token?: string
+          id?: string
+          max_guests?: number
+          notes?: string | null
+          professional_id: string
+          status?: Database["public"]["Enums"]["wedding_status"]
+          updated_at?: string
+        }
+        Update: {
+          block_end_at?: string
+          block_start_at?: string
+          bride_name?: string
+          bride_phone?: string
+          created_at?: string
+          created_by?: string | null
+          event_date?: string
+          event_location?: string | null
+          group_token?: string
+          id?: string
+          max_guests?: number
+          notes?: string | null
+          professional_id?: string
+          status?: Database["public"]["Enums"]["wedding_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wedding_packages_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wedding_packages_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       appointments_busy: {
@@ -817,6 +973,18 @@ export type Database = {
         Args: { _pro_id: string }
         Returns: undefined
       }
+      book_wedding_guest: {
+        Args: {
+          _consent: boolean
+          _guest_name: string
+          _guest_phone: string
+          _notes?: string
+          _service_id: string
+          _start_at: string
+          _token: string
+        }
+        Returns: string
+      }
       cancel_appointment_by_token: {
         Args: { _token: string }
         Returns: undefined
@@ -824,6 +992,7 @@ export type Database = {
       claim_professional: { Args: { _code: string }; Returns: string }
       get_appointment_by_token: { Args: { _token: string }; Returns: Json }
       get_waitlist_status: { Args: { _token: string }; Returns: Json }
+      get_wedding_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -849,6 +1018,7 @@ export type Database = {
         | "manicure"
         | "outro"
         | "maquiagem"
+      wedding_status: "rascunho" | "ativo" | "concluido" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -987,6 +1157,7 @@ export const Constants = {
         "outro",
         "maquiagem",
       ],
+      wedding_status: ["rascunho", "ativo", "concluido", "cancelado"],
     },
   },
 } as const
