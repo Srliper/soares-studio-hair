@@ -18,7 +18,7 @@ import heroImg from "@/assets/hero.jpg";
 import pillarHair from "@/assets/pillar-hair.jpg";
 import pillarNails from "@/assets/pillar-nails.jpg";
 import pillarWeddingNewAsset from "@/assets/pillar-casamentos-new.jpg.asset.json";
-import pillarBarberNewAsset from "@/assets/pillar-barber-new.jpg.asset.json";
+import pillarBarberNewAsset from "@/assets/pillar-barber-real.jpg.asset.json";
 import collabAlexiaAsset from "@/assets/pillar-casamentos.png.asset.json";
 import collabAfonsoAsset from "@/assets/pillar-barber.jpg.asset.json";
 const pillarWedding = pillarWeddingNewAsset.url;
