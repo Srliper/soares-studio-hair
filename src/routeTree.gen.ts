@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
+import { Route as CasamentoTokenRouteImport } from './routes/casamento.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const EsperaTokenRoute = EsperaTokenRouteImport.update({
   id: '/espera/$token',
   path: '/espera/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CasamentoTokenRoute = CasamentoTokenRouteImport.update({
+  id: '/casamento/$token',
+  path: '/casamento/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/casamento/$token': typeof CasamentoTokenRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/casamento/$token': typeof CasamentoTokenRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/casamento/$token': typeof CasamentoTokenRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/casamento/$token'
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/casamento/$token'
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/agendamento/$token'
     | '/api/chat'
+    | '/casamento/$token'
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AgendamentoTokenRoute: typeof AgendamentoTokenRoute
   ApiChatRoute: typeof ApiChatRoute
+  CasamentoTokenRoute: typeof CasamentoTokenRoute
   EsperaTokenRoute: typeof EsperaTokenRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
   ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       path: '/espera/$token'
       fullPath: '/espera/$token'
       preLoaderRoute: typeof EsperaTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/casamento/$token': {
+      id: '/casamento/$token'
+      path: '/casamento/$token'
+      fullPath: '/casamento/$token'
+      preLoaderRoute: typeof CasamentoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -269,6 +289,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AgendamentoTokenRoute: AgendamentoTokenRoute,
   ApiChatRoute: ApiChatRoute,
+  CasamentoTokenRoute: CasamentoTokenRoute,
   EsperaTokenRoute: EsperaTokenRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
   ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
