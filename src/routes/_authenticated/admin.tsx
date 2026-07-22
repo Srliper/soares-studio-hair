@@ -505,6 +505,21 @@ function ServicesPanel({ restrictToProfessionalId }: { restrictToProfessionalId:
 
   return (
     <div className="mt-6 space-y-8">
+      <Card className="p-4 border-primary/30 bg-primary/5">
+        <div className="flex items-start gap-3">
+          <Edit className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div className="text-sm space-y-2">
+            <div className="font-medium text-foreground">Como alterar preços e serviços</div>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Clique no ícone <Edit className="inline h-3 w-3" /> ao lado do serviço para editar <strong className="text-foreground">nome, preço, duração e categoria</strong>.</li>
+              <li>Use <Palette className="inline h-3 w-3" /> para gerenciar <strong className="text-foreground">variantes de estilo</strong> (ex.: degradê navalhado, barba italiana) com preço adicional.</li>
+              <li><strong className="text-foreground">Novo serviço</strong> cria um item vinculado ao profissional. <Trash2 className="inline h-3 w-3 text-destructive" /> remove permanentemente.</li>
+              <li>Preços em <strong className="text-foreground">reais (R$)</strong>. As alterações aparecem no site na hora — não é preciso publicar de novo.</li>
+              {restrictToProfessionalId && <li>Você só vê e edita <strong className="text-foreground">seus próprios serviços</strong>. Para alterar de outro profissional, peça ao administrador.</li>}
+            </ul>
+          </div>
+        </div>
+      </Card>
       {pros?.map((p: any) => {
         const list = (services ?? []).filter((s: any) => s.professional_id === p.id);
         return (
