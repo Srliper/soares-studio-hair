@@ -5,6 +5,7 @@ const STORAGE_KEY = "high-contrast";
 
 export function HighContrastToggle({ className = "" }: { className?: string }) {
   const [on, setOn] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
 
   useEffect(() => {
     const saved = typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY) === "1";
@@ -19,9 +20,15 @@ export function HighContrastToggle({ className = "" }: { className?: string }) {
     try {
       localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
     } catch {}
+    setAnnouncement(
+      next
+        ? "Modo alto contraste ativado."
+        : "Modo alto contraste desativado."
+    );
   };
 
   return (
+    <>
     <button
       type="button"
       onClick={toggle}
@@ -33,5 +40,14 @@ export function HighContrastToggle({ className = "" }: { className?: string }) {
       <Contrast className="w-3.5 h-3.5" />
       <span className="hidden sm:inline">{on ? "Normal" : "Contraste"}</span>
     </button>
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only"
+    >
+      {announcement}
+    </div>
+    </>
   );
 }
