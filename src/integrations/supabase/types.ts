@@ -211,6 +211,72 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_points: {
+        Row: {
+          created_at: string
+          customer_phone_digits: string
+          expires_at: string | null
+          id: string
+          note: string | null
+          points: number
+          source: Database["public"]["Enums"]["loyalty_source"]
+          source_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_phone_digits: string
+          expires_at?: string | null
+          id?: string
+          note?: string | null
+          points: number
+          source: Database["public"]["Enums"]["loyalty_source"]
+          source_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_phone_digits?: string
+          expires_at?: string | null
+          id?: string
+          note?: string | null
+          points?: number
+          source?: Database["public"]["Enums"]["loyalty_source"]
+          source_id?: string | null
+        }
+        Relationships: []
+      }
+      loyalty_rules: {
+        Row: {
+          celebration_thresholds: number[]
+          enabled: boolean
+          id: boolean
+          points_expire_months: number
+          points_per_real: number
+          points_per_review: number
+          redeem_ratio: number
+          updated_at: string
+        }
+        Insert: {
+          celebration_thresholds?: number[]
+          enabled?: boolean
+          id?: boolean
+          points_expire_months?: number
+          points_per_real?: number
+          points_per_review?: number
+          redeem_ratio?: number
+          updated_at?: string
+        }
+        Update: {
+          celebration_thresholds?: number[]
+          enabled?: boolean
+          id?: boolean
+          points_expire_months?: number
+          points_per_real?: number
+          points_per_review?: number
+          redeem_ratio?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_items: {
         Row: {
           active: boolean
@@ -929,6 +995,15 @@ export type Database = {
           },
         ]
       }
+      customer_loyalty_summary: {
+        Row: {
+          balance: number | null
+          last_activity_at: string | null
+          lifetime_earned: number | null
+          phone_digits: string | null
+        }
+        Relationships: []
+      }
       professionals_public: {
         Row: {
           active: boolean | null
@@ -964,6 +1039,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_grant_loyalty_bonus: {
+        Args: { _note: string; _phone_digits: string; _points: number }
+        Returns: string
+      }
       admin_regenerate_claim_code: {
         Args: { _hours: number; _pro_id: string }
         Returns: string
@@ -991,6 +1070,7 @@ export type Database = {
       }
       claim_professional: { Args: { _code: string }; Returns: string }
       get_appointment_by_token: { Args: { _token: string }; Returns: Json }
+      get_loyalty_by_token: { Args: { _token: string }; Returns: Json }
       get_waitlist_status: { Args: { _token: string }; Returns: Json }
       get_wedding_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
@@ -1010,6 +1090,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "profissional"
       appointment_status: "pendente" | "confirmado" | "concluido" | "cancelado"
+      loyalty_source: "appointment" | "review" | "referral" | "bonus" | "redeem"
       portfolio_status: "rascunho" | "aprovado" | "oculto"
       service_category:
         | "masculino"
@@ -1148,6 +1229,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "profissional"],
       appointment_status: ["pendente", "confirmado", "concluido", "cancelado"],
+      loyalty_source: ["appointment", "review", "referral", "bonus", "redeem"],
       portfolio_status: ["rascunho", "aprovado", "oculto"],
       service_category: [
         "masculino",
