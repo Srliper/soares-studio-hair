@@ -17,6 +17,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksWaitlistSlotFreedRouteImport } from './routes/api/public/hooks/waitlist-slot-freed'
+import { Route as ApiPublicHooksReviewRequestRouteImport } from './routes/api/public/hooks/review-request'
 import { Route as ApiPublicHooksReminderRouteImport } from './routes/api/public/hooks/reminder'
 import { Route as ApiPublicHooksReengagementRouteImport } from './routes/api/public/hooks/reengagement'
 
@@ -60,6 +61,12 @@ const ApiPublicHooksWaitlistSlotFreedRoute =
     path: '/api/public/hooks/waitlist-slot-freed',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksReviewRequestRoute =
+  ApiPublicHooksReviewRequestRouteImport.update({
+    id: '/api/public/hooks/review-request',
+    path: '/api/public/hooks/review-request',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksReminderRoute = ApiPublicHooksReminderRouteImport.update({
   id: '/api/public/hooks/reminder',
   path: '/api/public/hooks/reminder',
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/review-request': typeof ApiPublicHooksReviewRequestRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/review-request': typeof ApiPublicHooksReviewRequestRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRoutesById {
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/espera/$token': typeof EsperaTokenRoute
   '/api/public/hooks/reengagement': typeof ApiPublicHooksReengagementRoute
   '/api/public/hooks/reminder': typeof ApiPublicHooksReminderRoute
+  '/api/public/hooks/review-request': typeof ApiPublicHooksReviewRequestRoute
   '/api/public/hooks/waitlist-slot-freed': typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 export interface FileRouteTypes {
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/review-request'
     | '/api/public/hooks/waitlist-slot-freed'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/review-request'
     | '/api/public/hooks/waitlist-slot-freed'
   id:
     | '__root__'
@@ -141,6 +153,7 @@ export interface FileRouteTypes {
     | '/espera/$token'
     | '/api/public/hooks/reengagement'
     | '/api/public/hooks/reminder'
+    | '/api/public/hooks/review-request'
     | '/api/public/hooks/waitlist-slot-freed'
   fileRoutesById: FileRoutesById
 }
@@ -153,6 +166,7 @@ export interface RootRouteChildren {
   EsperaTokenRoute: typeof EsperaTokenRoute
   ApiPublicHooksReengagementRoute: typeof ApiPublicHooksReengagementRoute
   ApiPublicHooksReminderRoute: typeof ApiPublicHooksReminderRoute
+  ApiPublicHooksReviewRequestRoute: typeof ApiPublicHooksReviewRequestRoute
   ApiPublicHooksWaitlistSlotFreedRoute: typeof ApiPublicHooksWaitlistSlotFreedRoute
 }
 
@@ -214,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWaitlistSlotFreedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/review-request': {
+      id: '/api/public/hooks/review-request'
+      path: '/api/public/hooks/review-request'
+      fullPath: '/api/public/hooks/review-request'
+      preLoaderRoute: typeof ApiPublicHooksReviewRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/reminder': {
       id: '/api/public/hooks/reminder'
       path: '/api/public/hooks/reminder'
@@ -251,18 +272,9 @@ const rootRouteChildren: RootRouteChildren = {
   EsperaTokenRoute: EsperaTokenRoute,
   ApiPublicHooksReengagementRoute: ApiPublicHooksReengagementRoute,
   ApiPublicHooksReminderRoute: ApiPublicHooksReminderRoute,
+  ApiPublicHooksReviewRequestRoute: ApiPublicHooksReviewRequestRoute,
   ApiPublicHooksWaitlistSlotFreedRoute: ApiPublicHooksWaitlistSlotFreedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
