@@ -432,6 +432,87 @@ export type Database = {
         }
         Relationships: []
       }
+      review_events: {
+        Row: {
+          appointment_id: string
+          channel: string
+          customer_id: string | null
+          id: string
+          message: string
+          sent_at: string
+          status: string
+          webhook_response: string | null
+        }
+        Insert: {
+          appointment_id: string
+          channel?: string
+          customer_id?: string | null
+          id?: string
+          message: string
+          sent_at?: string
+          status: string
+          webhook_response?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          channel?: string
+          customer_id?: string | null
+          id?: string
+          message?: string
+          sent_at?: string
+          status?: string
+          webhook_response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_events_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_settings: {
+        Row: {
+          cooldown_days: number
+          created_at: string
+          enabled: boolean
+          google_review_url: string
+          hours_after: number
+          id: number
+          message_template: string
+          updated_at: string
+        }
+        Insert: {
+          cooldown_days?: number
+          created_at?: string
+          enabled?: boolean
+          google_review_url?: string
+          hours_after?: number
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Update: {
+          cooldown_days?: number
+          created_at?: string
+          enabled?: boolean
+          google_review_url?: string
+          hours_after?: number
+          id?: number
+          message_template?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_variants: {
         Row: {
           active: boolean
