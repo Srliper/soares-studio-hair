@@ -62,7 +62,7 @@ export function LoyaltyPanel() {
       const digits = phone.replace(/\D/g, "");
       const n = parseInt(pts, 10);
       if (!digits || !Number.isFinite(n) || n === 0) throw new Error("Preencha telefone e pontos (≠ 0)");
-      const { error } = await supabase.rpc("admin_grant_loyalty_bonus", { _phone_digits: digits, _points: n, _note: note || null });
+      const { error } = await supabase.rpc("admin_grant_loyalty_bonus", { _phone_digits: digits, _points: n, _note: note || "" });
       if (error) throw error;
     },
     onSuccess: () => {
