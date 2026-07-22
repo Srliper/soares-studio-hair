@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
+import { HighContrastToggle } from "@/components/HighContrastToggle";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -266,6 +267,7 @@ function Header() {
           <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-0.5">Hair Afonso &amp; Alexia</div>
         </div>
         <div className="flex justify-end items-center gap-4">
+          <HighContrastToggle />
           <a href="https://instagram.com/afonsosoaresstudio" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hidden sm:inline text-xs uppercase tracking-widest text-primary hover:text-primary/80">
             Instagram
           </a>
