@@ -91,6 +91,84 @@
 .gold-border { border: 1px solid oklch(0.78 0.13 82 / 0.4); }
 .gold-shadow { box-shadow: 0 20px 60px -20px oklch(0.78 0.13 82 / 0.25); }
 
+/* ==========================================================
+   High Contrast Mode
+   Toggled via .high-contrast on <html>. Overrides design
+   tokens so every component (using semantic tokens) responds.
+   ========================================================== */
+.high-contrast {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0 0 0);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.95 0.2 95);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.15 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.95 0 0);
+  --accent: oklch(0.95 0.2 95);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.65 0.28 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0);
+  --input: oklch(0.15 0 0);
+  --ring: oklch(0.95 0.2 95);
+  --gold: oklch(0.95 0.2 95);
+  --gold-soft: oklch(1 0.18 95);
+  --sidebar: oklch(0 0 0);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.95 0.2 95);
+  --sidebar-primary-foreground: oklch(0 0 0);
+  --sidebar-accent: oklch(0.15 0 0);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(1 0 0);
+  --sidebar-ring: oklch(0.95 0.2 95);
+}
+
+.high-contrast body {
+  background-image: none !important;
+  background-color: var(--color-background);
+}
+
+.high-contrast .gold-gradient {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: var(--color-primary);
+}
+
+.high-contrast .gold-border {
+  border-color: var(--color-primary);
+}
+
+.high-contrast .gold-shadow {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* Stronger focus outlines everywhere */
+.high-contrast *:focus-visible {
+  outline: 3px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Force visible borders on interactive surfaces */
+.high-contrast button,
+.high-contrast [role="button"],
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select,
+.high-contrast a {
+  border-color: var(--color-border);
+}
+
+/* Neutralize decorative backdrop blurs and translucency */
+.high-contrast [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+
 /* Quantum Lovable - watermark removal */
 #lovable-badge {
   display: none !important;

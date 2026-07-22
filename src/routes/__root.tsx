@@ -78,7 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('high-contrast')==='1'){document.documentElement.classList.add('high-contrast');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
