@@ -11,6 +11,9 @@ jobs:
   rls-lint:
     name: Lint migrations for RLS regressions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     services:
       postgres:
@@ -163,12 +166,53 @@ jobs:
 
           echo "overall=$overall" >> "$GITHUB_OUTPUT"
 
+          {
+            echo "summary<<EOF"
+            echo "| Check | Status | Details |"
+            echo "|---|---|---|"
+            echo "| RLS enabled | $s1 | ${no_rls:-None} |"
+            echo "| SECURITY DEFINER views | $s2 | ${definer_views:-None} |"
+            echo "| Permissive policies | $s3 | ${bad_policies:-None} |"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Upload report artifact
         if: always()
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: rls-report
           path: report/
+
+      - name: Post PR comment with report links
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OVERALL: ${{ steps.checks.outputs.overall }}
+          SUMMARY: ${{ steps.checks.outputs.summary }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          marker="<!-- rls-report-comment -->"
+          badge=$([ "$OVERALL" = "pass" ] && echo "✅ PASS" || echo "❌ FAIL")
+          body=$(cat <<EOF
+          $marker
+          ## 🔒 RLS & SECURITY DEFINER Report — $badge
+
+          $SUMMARY
+
+          - 📦 [Download \`rls-report\` artifact (HTML + JSON)]($ARTIFACT_URL)
+          - 🧾 [Workflow run]($RUN_URL)
+          EOF
+          )
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+            --jq ".[] | select(.body | contains(\"$marker\")) | .id" | head -n1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="$body" >/dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -f body="$body" >/dev/null
+          fi
 
       - name: Fail if any check failed
         if: steps.checks.outputs.overall == 'fail'
