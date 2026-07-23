@@ -178,6 +178,7 @@ function Home() {
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
+          {step === 0 && <Differentials />}
           {step === 0 && (
             <Pillars
               onPickPro={(p) => {
