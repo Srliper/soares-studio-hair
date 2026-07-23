@@ -136,11 +136,14 @@ jobs:
           import json, os, html
           checks = [
             {"id":"rls_enabled","name":"All public tables have RLS enabled",
+             "category":"tables",
              "status":"${s1}","details":"${no_rls}".strip() or "None"},
             {"id":"definer_views","name":"No unexpected SECURITY DEFINER views",
+             "category":"security_definer",
              "status":"${s2}","details":"${definer_views}".strip() or "None",
              "allowlist":os.environ["ALLOWED_DEFINER_VIEWS"].split(",")},
             {"id":"permissive_policies","name":"No anon-write / USING(true) mutation policies",
+             "category":"policies",
              "status":"${s3}","details":"${bad_policies}".strip() or "None"},
           ]
 
@@ -164,11 +167,20 @@ jobs:
                   cur_items = to_set(c["details"])
                   prev_items = to_set(p.get("details",""))
                   diff["checks"].append({
-                      "id": c["id"], "name": c["name"],
+                      "id": c["id"], "name": c["name"], "category": c["category"],
                       "status_change": None if p.get("status") == c["status"] else f'{p.get("status","-")} → {c["status"]}',
                       "added": sorted(cur_items - prev_items),
                       "removed": sorted(prev_items - cur_items),
                   })
+              # Group diff entries by category for consumers.
+              cats = {}
+              for d in diff["checks"]:
+                  cats.setdefault(d["category"], {"added": [], "removed": [], "status_changes": []})
+                  cats[d["category"]]["added"] += [f'{d["name"]}: {x}' for x in d["added"]]
+                  cats[d["category"]]["removed"] += [f'{d["name"]}: {x}' for x in d["removed"]]
+                  if d["status_change"]:
+                      cats[d["category"]]["status_changes"].append({"check": d["name"], "change": d["status_change"]})
+              diff["by_category"] = cats
 
           report = {
             "overall":"${overall}",
@@ -204,6 +216,33 @@ jobs:
                            f'(run {html.escape(str(b["run"]))}, overall {html.escape(b["overall"])})</p>'
                            f'<table><thead><tr><th>Check</th><th>Status change</th><th>Added</th><th>Removed</th></tr></thead>'
                            f'<tbody>{drows}</tbody></table>')
+
+              cat_labels = {"tables":"Tables","policies":"Policies","security_definer":"SECURITY DEFINER objects"}
+              cat_order = ["tables","policies","security_definer"]
+              cat_html = '<h2>Diff by category</h2>'
+              cats = diff.get("by_category", {})
+              any_cat = False
+              for key in cat_order:
+                  c = cats.get(key)
+                  if not c: continue
+                  if not (c["added"] or c["removed"] or c["status_changes"]):
+                      continue
+                  any_cat = True
+                  sc_rows = "".join(
+                      f'<li>{html.escape(x["check"])}: <code>{html.escape(x["change"])}</code></li>'
+                      for x in c["status_changes"]) or '<li><i>no status changes</i></li>'
+                  add_rows = "".join(f'<li style="color:#16a34a">+ {html.escape(x)}</li>' for x in c["added"]) or '<li><i>none</i></li>'
+                  rem_rows = "".join(f'<li style="color:#dc2626">− {html.escape(x)}</li>' for x in c["removed"]) or '<li><i>none</i></li>'
+                  cat_html += (f'<h3>{cat_labels[key]}</h3>'
+                               f'<table><thead><tr><th>Status changes</th><th>Added</th><th>Removed</th></tr></thead>'
+                               f'<tbody><tr>'
+                               f'<td><ul>{sc_rows}</ul></td>'
+                               f'<td><ul>{add_rows}</ul></td>'
+                               f'<td><ul>{rem_rows}</ul></td>'
+                               f'</tr></tbody></table>')
+              if not any_cat:
+                  cat_html += '<p><i>No changes in any category since the baseline.</i></p>'
+              diff_html += cat_html
           else:
               diff_html = '<h2>Diff vs last successful run</h2><p><i>No baseline available.</i></p>'
 
