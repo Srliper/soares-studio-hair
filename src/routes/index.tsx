@@ -312,14 +312,33 @@ function Hero({ onStart }: { onStart: () => void }) {
   );
 }
 
-function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
-  return null as never;
+function Differentials() {
+  const items = [
+    { Icon: Sparkles, title: "Alto padrão", body: "Produtos premium e técnicas atuais para resultado impecável." },
+    { Icon: Scissors, title: "Assinatura própria", body: "Cortes e cor com a experiência de anos do Afonso." },
+    { Icon: Hand, title: "Cuidado nos detalhes", body: "Manicure, spa e nail art assinados por Alexia." },
+    { Icon: Heart, title: "Dia da noiva", body: "Beleza completa para o seu momento mais especial." },
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-4 pb-16">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((it) => (
+          <div key={it.title} className="flex items-start gap-4 rounded-sm border border-primary/20 bg-background/40 p-5 backdrop-blur-sm">
+            <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-primary/40 text-primary">
+              <it.Icon className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-display text-lg gold-gradient">{it.title}</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{it.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
-function _unused() {}
-
-function DifferentialsInline() { return null; }
-
+function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
   const { data: pros } = useProfessionals();
   const findBySlug = (slug: string) => pros?.find((p) => p.slug === slug);
   const items: { title: string; img: string; body: string; slug: string; Icon: typeof Scissors }[] = [
