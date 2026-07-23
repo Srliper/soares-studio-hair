@@ -313,6 +313,13 @@ function Hero({ onStart }: { onStart: () => void }) {
 }
 
 function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
+  return null as never;
+}
+
+function _unused() {}
+
+function DifferentialsInline() { return null; }
+
   const { data: pros } = useProfessionals();
   const findBySlug = (slug: string) => pros?.find((p) => p.slug === slug);
   const items: { title: string; img: string; body: string; slug: string; Icon: typeof Scissors }[] = [
