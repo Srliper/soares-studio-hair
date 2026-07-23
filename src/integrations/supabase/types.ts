@@ -1052,6 +1052,21 @@ export type Database = {
         Args: { _pro_id: string }
         Returns: undefined
       }
+      book_appointment: {
+        Args: {
+          _client_name: string
+          _client_notes: string
+          _client_phone: string
+          _end_at: string
+          _professional_id: string
+          _reference_image_url: string
+          _service_id: string
+          _service_variant_id: string
+          _start_at: string
+          _style_notes: string
+        }
+        Returns: string
+      }
       book_wedding_guest: {
         Args: {
           _consent: boolean
