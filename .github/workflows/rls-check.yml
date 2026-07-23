@@ -1,0 +1,129 @@
+name: RLS & Security Definer Check
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/rls-check.yml"
+  workflow_dispatch:
+
+jobs:
+  rls-lint:
+    name: Lint migrations for RLS regressions
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+      # SECURITY DEFINER views that are intentionally allowed.
+      # Keep in sync with @security-memory.
+      ALLOWED_DEFINER_VIEWS: "professionals_public,appointments_busy,time_blocks_public"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Bootstrap Supabase-like schema
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE SCHEMA IF NOT EXISTS auth;
+          CREATE SCHEMA IF NOT EXISTS storage;
+          CREATE SCHEMA IF NOT EXISTS extensions;
+          CREATE TABLE IF NOT EXISTS auth.users (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            email text,
+            raw_user_meta_data jsonb
+          );
+          CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULL::uuid $$;
+          CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT NULL::text $$;
+          DO $$ BEGIN CREATE ROLE anon NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+          DO $$ BEGIN CREATE ROLE authenticated NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+          DO $$ BEGIN CREATE ROLE service_role NOLOGIN BYPASSRLS; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+          SQL
+
+      - name: Apply migrations
+        run: |
+          shopt -s nullglob
+          files=(supabase/migrations/*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No migrations found — skipping."
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "→ Applying $f"
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Fail if any public table has RLS disabled
+        run: |
+          psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT string_agg(c.relname, ', ')
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public'
+              AND c.relkind = 'r'
+              AND c.relrowsecurity = false;
+          " > /tmp/no_rls.txt
+          if [ -s /tmp/no_rls.txt ] && [ "$(cat /tmp/no_rls.txt)" != "" ]; then
+            echo "::error::Tables in public without RLS: $(cat /tmp/no_rls.txt)"
+            exit 1
+          fi
+          echo "✓ All public tables have RLS enabled"
+
+      - name: Fail on unexpected SECURITY DEFINER views
+        run: |
+          allowed_sql=$(printf "'%s'," ${ALLOWED_DEFINER_VIEWS//,/ } | sed 's/,$//')
+          psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT string_agg(c.relname, ', ')
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public'
+              AND c.relkind = 'v'
+              AND (
+                COALESCE((SELECT option_value FROM pg_options_to_table(c.reloptions)
+                          WHERE option_name = 'security_invoker'), 'false') = 'false'
+              )
+              AND c.relname NOT IN ($allowed_sql);
+          " > /tmp/definer_views.txt
+          if [ -s /tmp/definer_views.txt ] && [ "$(cat /tmp/definer_views.txt)" != "" ]; then
+            echo "::error::Unexpected SECURITY DEFINER view(s): $(cat /tmp/definer_views.txt)"
+            echo "::error::Add to ALLOWED_DEFINER_VIEWS only after review + @security-memory update."
+            exit 1
+          fi
+          echo "✓ Only allow-listed SECURITY DEFINER views present"
+
+      - name: Fail on overly permissive policies (USING true / anon writes)
+        run: |
+          psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT string_agg(schemaname||'.'||tablename||':'||policyname, ', ')
+            FROM pg_policies
+            WHERE schemaname = 'public'
+              AND (
+                (cmd IN ('INSERT','UPDATE','DELETE','ALL') AND 'anon' = ANY(roles))
+                OR (qual = 'true' AND cmd IN ('UPDATE','DELETE','ALL'))
+              );
+          " > /tmp/bad_policies.txt
+          if [ -s /tmp/bad_policies.txt ] && [ "$(cat /tmp/bad_policies.txt)" != "" ]; then
+            echo "::error::Permissive policies detected: $(cat /tmp/bad_policies.txt)"
+            exit 1
+          fi
+          echo "✓ No permissive anon-write or USING-true mutation policies"
