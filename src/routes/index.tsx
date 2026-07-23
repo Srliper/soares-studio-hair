@@ -232,17 +232,21 @@ function Home() {
                         setSubmitting(true);
                         const start = new Date(`${day}T${slot}:00`);
                         const end = new Date(start.getTime() + service.duration_minutes * 60000);
-                        const { data: inserted, error } = await supabase.from("appointments").insert({
-                          professional_id: pro.id, service_id: service.id,
-                          service_variant_id: variant?.id ?? null,
-                          reference_image_url: referencePath,
-                          style_notes: styleNotes.trim() || null,
-                          client_name: name, client_phone: phone, client_notes: notes || null,
-                          start_at: start.toISOString(), end_at: end.toISOString(), status: "pendente",
-                        }).select("manage_token").single();
+                        const { data: token, error } = await supabase.rpc("book_appointment", {
+                          _professional_id: pro.id,
+                          _service_id: service.id,
+                          _service_variant_id: variant?.id ?? null,
+                          _reference_image_url: referencePath,
+                          _style_notes: styleNotes.trim() || null,
+                          _client_name: name,
+                          _client_phone: phone,
+                          _client_notes: notes || null,
+                          _start_at: start.toISOString(),
+                          _end_at: end.toISOString(),
+                        });
                         setSubmitting(false);
                         if (error) { toast.error("Não foi possível agendar. Tente outro horário."); return; }
-                        setManageToken((inserted as any)?.manage_token ?? null);
+                        setManageToken((token as unknown as string) ?? null);
                         setDone(true);
                       }} />
                   )}
