@@ -22,6 +22,7 @@ import pillarBarberNewAsset from "@/assets/pillar-barber-real.jpg.asset.json";
 import collabAlexiaAsset from "@/assets/pillar-casamentos.png.asset.json";
 import collabAfonsoAsset from "@/assets/pillar-barber.jpg.asset.json";
 import pillarMaquiagemAsset from "@/assets/pillar-maquiagem.jpg.asset.json";
+import studioLogo from "@/assets/studio-soares-logo.png";
 const pillarWedding = pillarWeddingNewAsset.url;
 const pillarBarber = pillarBarberNewAsset.url;
 const afonsoImg = collabAfonsoAsset.url;
@@ -265,8 +266,10 @@ function Header() {
       <div className="mx-auto grid max-w-6xl grid-cols-3 items-center px-4 py-4">
         <div className="text-xs italic tracking-widest text-primary/80">Est. 2023</div>
         <div className="text-center">
-          <div className="font-display text-xl md:text-2xl tracking-[0.35em] gold-gradient">STUDIO SOARES</div>
-          <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-0.5">Hair Afonso &amp; Alexia</div>
+          <div className="flex flex-col items-center">
+            <img src={studioLogo} alt="Studio Soares" className="h-10 md:h-12 w-auto" />
+            <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-1">Hair Afonso &amp; Alexia</div>
+          </div>
         </div>
         <div className="flex justify-end items-center gap-4">
           <HighContrastToggle />
