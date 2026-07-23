@@ -21,6 +21,7 @@ import pillarWeddingNewAsset from "@/assets/pillar-casamentos-new.jpg.asset.json
 import pillarBarberNewAsset from "@/assets/pillar-barber-real.jpg.asset.json";
 import collabAlexiaAsset from "@/assets/pillar-casamentos.png.asset.json";
 import collabAfonsoAsset from "@/assets/pillar-barber.jpg.asset.json";
+import pillarMaquiagemAsset from "@/assets/pillar-maquiagem.jpg.asset.json";
 const pillarWedding = pillarWeddingNewAsset.url;
 const pillarBarber = pillarBarberNewAsset.url;
 const afonsoImg = collabAfonsoAsset.url;
@@ -316,7 +317,7 @@ function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
   const items: { title: string; img: string; body: string; slug: string }[] = [
     { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima.", slug: "afonso" },
     { title: "Manicure & Nail Design", img: pillarNails, body: "Blindagem, alongamento em fibra ou gel, spa dos pés e nail art assinados por Alexia Soares.", slug: "alexia" },
-    { title: "Maquiagem", img: collabAlexiaAsset.url, body: "Social, festa, madrinha e formatura — makes que valorizam sua expressão com técnica e delicadeza.", slug: "alexia" },
+    { title: "Maquiagem", img: pillarMaquiagemAsset.url, body: "Social, festa, madrinha e formatura — makes que valorizam sua expressão com técnica e delicadeza.", slug: "alexia" },
     { title: "Casamentos", img: pillarWedding, body: "O dia da noiva completo — cabelo, maquiagem e cuidado nos detalhes, assinado por Alexia Soares.", slug: "alexia" },
     { title: "Barber", img: pillarBarber, body: "Atendimento premium para o público masculino: cortes clássicos, modernos e barba com a assinatura do Afonso.", slug: "afonso" },
   ];
