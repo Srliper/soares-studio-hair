@@ -56,10 +56,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Studio Soares — Hair Afonso & Alexia" },
       { name: "description", content: "A nobreza em cada detalhe. Mechas, cortes femininos e masculinos com Afonso Soares e manicure com Alexia Soares em Sorocaba e região. Agende online." },
       { property: "og:title", content: "Studio Soares — Hair Afonso & Alexia" },
-      { property: "og:description", content: "Est. 2023 · Sorocaba. Especialistas em mechas, cortes de luxo, casamentos e manicure. Agendamento online." },
+      { property: "og:description", content: "A nobreza em cada detalhe. Mechas, cortes femininos e masculinos com Afonso Soares e manicure com Alexia Soares em Sorocaba e região. Agende online." },
 
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Studio Soares — Hair Afonso & Alexia" },
+      { name: "twitter:description", content: "A nobreza em cada detalhe. Mechas, cortes femininos e masculinos com Afonso Soares e manicure com Alexia Soares em Sorocaba e região. Agende online." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/45b826cb-5e7c-40e0-888c-783c05dcddbb" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/45b826cb-5e7c-40e0-888c-783c05dcddbb" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
