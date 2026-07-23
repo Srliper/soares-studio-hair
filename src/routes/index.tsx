@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search, Heart, Hand, Brush, Crown } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search, Heart, Hand, Brush, Crown, AlertCircle, RefreshCw } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -454,7 +454,50 @@ function ProfileCard({ role, name, bio, instagram, tiktok, image }: { role: stri
 }
 
 function StepPro({ onPick }: { onPick: (p: Professional) => void }) {
-  const { data, isLoading } = useProfessionals();
+  return <StepProInner onPick={onPick} />;
+}
+
+function EmptyFallback({ title, message, onRetry, retrying }: {
+  title: string; message: string; onRetry: () => void; retrying?: boolean;
+}) {
+  const waLink = "https://wa.me/5515998343669?text=" + encodeURIComponent("Olá! Estou tentando agendar pelo site mas não estou vendo as opções.");
+  return (
+    <div role="alert" className="mt-6 rounded-lg border border-border bg-card/60 p-6 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 gold-border">
+        <AlertCircle className="h-6 w-6 text-primary" />
+      </div>
+      <div className="font-display text-lg">{title}</div>
+      <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <button
+          onClick={onRetry}
+          disabled={retrying}
+          className="inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/20 disabled:opacity-60"
+        >
+          <RefreshCw className={"h-4 w-4 " + (retrying ? "animate-spin" : "")} />
+          {retrying ? "Tentando…" : "Tentar novamente"}
+        </button>
+        <button
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:border-primary/60"
+        >
+          Recarregar página
+        </button>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:border-primary/60"
+        >
+          Falar no WhatsApp
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function StepProInner({ onPick }: { onPick: (p: Professional) => void }) {
+  const { data, isLoading, error, refetch, isFetching } = useProfessionals();
 
   return (
     <div>
@@ -477,12 +520,22 @@ function StepPro({ onPick }: { onPick: (p: Professional) => void }) {
           </motion.button>
         ))}
       </div>
+      {!isLoading && (error || (data && data.length === 0)) && (
+        <EmptyFallback
+          title={error ? "Não conseguimos carregar os profissionais" : "Nenhum profissional disponível"}
+          message={error
+            ? "Verifique sua conexão e tente novamente. Se persistir, fale conosco no WhatsApp."
+            : "No momento não há profissionais ativos. Tente novamente em instantes."}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
+      )}
     </div>
   );
 }
 
 function StepService({ pro, onBack, onPick }: { pro: Professional; onBack: () => void; onPick: (s: Service) => void }) {
-  const { data, isLoading } = useServices(pro.id);
+  const { data, isLoading, error, refetch, isFetching } = useServices(pro.id);
   const grouped = useMemo(() => {
     const g: Record<string, Service[]> = {};
     (data ?? []).forEach((s) => { (g[s.category] ??= []).push(s); });
@@ -517,6 +570,16 @@ function StepService({ pro, onBack, onPick }: { pro: Professional; onBack: () =>
           </div>
         ))}
       </div>
+      {!isLoading && (error || (data && data.length === 0)) && (
+        <EmptyFallback
+          title={error ? "Não conseguimos carregar os serviços" : "Nenhum serviço cadastrado"}
+          message={error
+            ? "Verifique sua conexão e tente novamente. Se persistir, fale conosco no WhatsApp."
+            : `${pro.name.split(" ")[0]} ainda não tem serviços ativos. Tente novamente em instantes.`}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
+      )}
     </div>
   );
 }
