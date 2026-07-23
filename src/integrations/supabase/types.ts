@@ -1037,6 +1037,39 @@ export type Database = {
         }
         Relationships: []
       }
+      time_blocks_public: {
+        Row: {
+          end_at: string | null
+          professional_id: string | null
+          start_at: string | null
+        }
+        Insert: {
+          end_at?: string | null
+          professional_id?: string | null
+          start_at?: string | null
+        }
+        Update: {
+          end_at?: string | null
+          professional_id?: string | null
+          start_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_blocks_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_blocks_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_grant_loyalty_bonus: {
