@@ -454,7 +454,7 @@ function ProfileCard({ role, name, bio, instagram, tiktok, image }: { role: stri
 }
 
 function StepPro({ onPick }: { onPick: (p: Professional) => void }) {
-  const { data, isLoading } = useProfessionals();
+  const { data, isLoading, error, refetch, isFetching } = useProfessionals();
 
   return (
     <div>
@@ -477,12 +477,22 @@ function StepPro({ onPick }: { onPick: (p: Professional) => void }) {
           </motion.button>
         ))}
       </div>
+      {!isLoading && (error || (data && data.length === 0)) && (
+        <EmptyFallback
+          title={error ? "Não conseguimos carregar os profissionais" : "Nenhum profissional disponível"}
+          message={error
+            ? "Verifique sua conexão e tente novamente. Se persistir, fale conosco no WhatsApp."
+            : "No momento não há profissionais ativos. Tente novamente em instantes."}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
+      )}
     </div>
   );
 }
 
 function StepService({ pro, onBack, onPick }: { pro: Professional; onBack: () => void; onPick: (s: Service) => void }) {
-  const { data, isLoading } = useServices(pro.id);
+  const { data, isLoading, error, refetch, isFetching } = useServices(pro.id);
   const grouped = useMemo(() => {
     const g: Record<string, Service[]> = {};
     (data ?? []).forEach((s) => { (g[s.category] ??= []).push(s); });
@@ -517,6 +527,16 @@ function StepService({ pro, onBack, onPick }: { pro: Professional; onBack: () =>
           </div>
         ))}
       </div>
+      {!isLoading && (error || (data && data.length === 0)) && (
+        <EmptyFallback
+          title={error ? "Não conseguimos carregar os serviços" : "Nenhum serviço cadastrado"}
+          message={error
+            ? "Verifique sua conexão e tente novamente. Se persistir, fale conosco no WhatsApp."
+            : `${pro.name.split(" ")[0]} ainda não tem serviços ativos. Tente novamente em instantes.`}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
+      )}
     </div>
   );
 }
