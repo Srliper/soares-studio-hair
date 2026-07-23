@@ -73,57 +73,105 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
 
-      - name: Fail if any public table has RLS disabled
+      - name: Run RLS checks and build report
+        id: checks
         run: |
-          psql -v ON_ERROR_STOP=1 -tAc "
-            SELECT string_agg(c.relname, ', ')
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = 'public'
-              AND c.relkind = 'r'
-              AND c.relrowsecurity = false;
-          " > /tmp/no_rls.txt
-          if [ -s /tmp/no_rls.txt ] && [ "$(cat /tmp/no_rls.txt)" != "" ]; then
-            echo "::error::Tables in public without RLS: $(cat /tmp/no_rls.txt)"
-            exit 1
-          fi
-          echo "✓ All public tables have RLS enabled"
-
-      - name: Fail on unexpected SECURITY DEFINER views
-        run: |
+          mkdir -p report
           allowed_sql=$(printf "'%s'," ${ALLOWED_DEFINER_VIEWS//,/ } | sed 's/,$//')
-          psql -v ON_ERROR_STOP=1 -tAc "
-            SELECT string_agg(c.relname, ', ')
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = 'public'
-              AND c.relkind = 'v'
-              AND (
-                COALESCE((SELECT option_value FROM pg_options_to_table(c.reloptions)
-                          WHERE option_name = 'security_invoker'), 'false') = 'false'
-              )
-              AND c.relname NOT IN ($allowed_sql);
-          " > /tmp/definer_views.txt
-          if [ -s /tmp/definer_views.txt ] && [ "$(cat /tmp/definer_views.txt)" != "" ]; then
-            echo "::error::Unexpected SECURITY DEFINER view(s): $(cat /tmp/definer_views.txt)"
-            echo "::error::Add to ALLOWED_DEFINER_VIEWS only after review + @security-memory update."
-            exit 1
-          fi
-          echo "✓ Only allow-listed SECURITY DEFINER views present"
 
-      - name: Fail on overly permissive policies (USING true / anon writes)
-        run: |
-          psql -v ON_ERROR_STOP=1 -tAc "
-            SELECT string_agg(schemaname||'.'||tablename||':'||policyname, ', ')
+          no_rls=$(psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT COALESCE(string_agg(c.relname, ', '), '')
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity=false;")
+
+          definer_views=$(psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT COALESCE(string_agg(c.relname, ', '), '')
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname='public' AND c.relkind='v'
+              AND COALESCE((SELECT option_value FROM pg_options_to_table(c.reloptions)
+                            WHERE option_name='security_invoker'),'false')='false'
+              AND c.relname NOT IN ($allowed_sql);")
+
+          bad_policies=$(psql -v ON_ERROR_STOP=1 -tAc "
+            SELECT COALESCE(string_agg(schemaname||'.'||tablename||':'||policyname, ', '), '')
             FROM pg_policies
-            WHERE schemaname = 'public'
-              AND (
-                (cmd IN ('INSERT','UPDATE','DELETE','ALL') AND 'anon' = ANY(roles))
-                OR (qual = 'true' AND cmd IN ('UPDATE','DELETE','ALL'))
-              );
-          " > /tmp/bad_policies.txt
-          if [ -s /tmp/bad_policies.txt ] && [ "$(cat /tmp/bad_policies.txt)" != "" ]; then
-            echo "::error::Permissive policies detected: $(cat /tmp/bad_policies.txt)"
-            exit 1
-          fi
-          echo "✓ No permissive anon-write or USING-true mutation policies"
+            WHERE schemaname='public'
+              AND ((cmd IN ('INSERT','UPDATE','DELETE','ALL') AND 'anon'=ANY(roles))
+                   OR (qual='true' AND cmd IN ('UPDATE','DELETE','ALL')));")
+
+          status() { [ -z "$1" ] && echo pass || echo fail; }
+          s1=$(status "$no_rls"); s2=$(status "$definer_views"); s3=$(status "$bad_policies")
+
+          overall=pass
+          [ "$s1" = fail ] || [ "$s2" = fail ] || [ "$s3" = fail ] && overall=fail
+
+          python3 - <<PY
+          import json, os, html
+          checks = [
+            {"id":"rls_enabled","name":"All public tables have RLS enabled",
+             "status":"${s1}","details":"${no_rls}".strip() or "None"},
+            {"id":"definer_views","name":"No unexpected SECURITY DEFINER views",
+             "status":"${s2}","details":"${definer_views}".strip() or "None",
+             "allowlist":os.environ["ALLOWED_DEFINER_VIEWS"].split(",")},
+            {"id":"permissive_policies","name":"No anon-write / USING(true) mutation policies",
+             "status":"${s3}","details":"${bad_policies}".strip() or "None"},
+          ]
+          report = {
+            "overall":"${overall}",
+            "repo":os.environ.get("GITHUB_REPOSITORY",""),
+            "sha":os.environ.get("GITHUB_SHA",""),
+            "ref":os.environ.get("GITHUB_REF",""),
+            "run":os.environ.get("GITHUB_RUN_ID",""),
+            "checks":checks,
+          }
+          with open("report/rls-report.json","w") as f: json.dump(report,f,indent=2)
+
+          badge = {"pass":"#16a34a","fail":"#dc2626"}
+          rows = "".join(
+            f'<tr><td>{html.escape(c["name"])}</td>'
+            f'<td style="color:{badge[c["status"]]};font-weight:600">{c["status"].upper()}</td>'
+            f'<td><code>{html.escape(c["details"])}</code></td></tr>'
+            for c in checks)
+          h = f"""<!doctype html><meta charset=utf-8>
+          <title>RLS Report — {html.escape(report['sha'][:7])}</title>
+          <style>body{{font-family:system-ui;margin:2rem;max-width:960px}}
+          table{{width:100%;border-collapse:collapse;margin-top:1rem}}
+          td,th{{padding:.6rem;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}}
+          .pill{{display:inline-block;padding:.2rem .6rem;border-radius:999px;color:#fff;background:{badge[report['overall']]}}}
+          </style>
+          <h1>RLS & SECURITY DEFINER Report</h1>
+          <p>Overall: <span class=pill>{report['overall'].upper()}</span></p>
+          <p><b>Repo:</b> {html.escape(report['repo'])} &middot;
+             <b>Commit:</b> <code>{html.escape(report['sha'][:12])}</code> &middot;
+             <b>Run:</b> {html.escape(report['run'])}</p>
+          <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+          <tbody>{rows}</tbody></table>
+          <p style=color:#6b7280;font-size:.85rem>Allowed SECURITY DEFINER views:
+          <code>{html.escape(os.environ['ALLOWED_DEFINER_VIEWS'])}</code></p>"""
+          with open("report/rls-report.html","w") as f: f.write(h)
+          PY
+
+          {
+            echo "## RLS Report"
+            echo ""
+            echo "| Check | Status | Details |"
+            echo "|---|---|---|"
+            echo "| RLS enabled | $s1 | ${no_rls:-None} |"
+            echo "| SECURITY DEFINER views | $s2 | ${definer_views:-None} |"
+            echo "| Permissive policies | $s3 | ${bad_policies:-None} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "overall=$overall" >> "$GITHUB_OUTPUT"
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rls-report
+          path: report/
+
+      - name: Fail if any check failed
+        if: steps.checks.outputs.overall == 'fail'
+        run: |
+          echo "::error::One or more RLS checks failed — see the rls-report artifact."
+          exit 1
