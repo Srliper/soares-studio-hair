@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
           description:
             "Studio de beleza em São Miguel Arcanjo — cabelo, barba, unhas, maquiagem e noivas.",
           image: "/favicon.ico",
-          telephone: "+55-15-99834-3669",
+          telephone: ["+55-15-99834-3669", "+55-15-99855-5206"],
           address: {
             "@type": "PostalAddress",
             streetAddress: "R. Cel. Fernando Prestes, 622",
