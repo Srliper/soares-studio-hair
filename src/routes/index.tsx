@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search, Heart, Hand, Brush, Crown } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -178,6 +178,7 @@ function Home() {
       ) : (
         <>
           {step === 0 && <Hero onStart={() => setStep(1)} />}
+          {step === 0 && <Differentials />}
           {step === 0 && (
             <Pillars
               onPickPro={(p) => {
@@ -311,15 +312,41 @@ function Hero({ onStart }: { onStart: () => void }) {
   );
 }
 
+function Differentials() {
+  const items = [
+    { Icon: Sparkles, title: "Alto padrão", body: "Produtos premium e técnicas atuais para resultado impecável." },
+    { Icon: Scissors, title: "Assinatura própria", body: "Cortes e cor com a experiência de anos do Afonso." },
+    { Icon: Hand, title: "Cuidado nos detalhes", body: "Manicure, spa e nail art assinados por Alexia." },
+    { Icon: Heart, title: "Dia da noiva", body: "Beleza completa para o seu momento mais especial." },
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-4 pb-16">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((it) => (
+          <div key={it.title} className="flex items-start gap-4 rounded-sm border border-primary/20 bg-background/40 p-5 backdrop-blur-sm">
+            <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-primary/40 text-primary">
+              <it.Icon className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-display text-lg gold-gradient">{it.title}</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{it.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
   const { data: pros } = useProfessionals();
   const findBySlug = (slug: string) => pros?.find((p) => p.slug === slug);
-  const items: { title: string; img: string; body: string; slug: string }[] = [
-    { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima.", slug: "afonso" },
-    { title: "Manicure & Nail Design", img: pillarNails, body: "Blindagem, alongamento em fibra ou gel, spa dos pés e nail art assinados por Alexia Soares.", slug: "alexia" },
-    { title: "Maquiagem", img: pillarMaquiagemAsset.url, body: "Social, festa, madrinha e formatura — makes que valorizam sua expressão com técnica e delicadeza.", slug: "alexia" },
-    { title: "Casamentos", img: pillarWedding, body: "O dia da noiva completo — cabelo, maquiagem e cuidado nos detalhes, assinado por Alexia Soares.", slug: "alexia" },
-    { title: "Barber", img: pillarBarber, body: "Atendimento premium para o público masculino: cortes clássicos, modernos e barba com a assinatura do Afonso.", slug: "afonso" },
+  const items: { title: string; img: string; body: string; slug: string; Icon: typeof Scissors }[] = [
+    { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima.", slug: "afonso", Icon: Scissors },
+    { title: "Manicure & Nail Design", img: pillarNails, body: "Blindagem, alongamento em fibra ou gel, spa dos pés e nail art assinados por Alexia Soares.", slug: "alexia", Icon: Hand },
+    { title: "Maquiagem", img: pillarMaquiagemAsset.url, body: "Social, festa, madrinha e formatura — makes que valorizam sua expressão com técnica e delicadeza.", slug: "alexia", Icon: Brush },
+    { title: "Casamentos", img: pillarWedding, body: "O dia da noiva completo — cabelo, maquiagem e cuidado nos detalhes, assinado por Alexia Soares.", slug: "alexia", Icon: Heart },
+    { title: "Barber", img: pillarBarber, body: "Atendimento premium para o público masculino: cortes clássicos, modernos e barba com a assinatura do Afonso.", slug: "afonso", Icon: Crown },
   ];
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24">
@@ -341,10 +368,16 @@ function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
               className="group text-left disabled:cursor-not-allowed disabled:opacity-60"
               aria-label={`Agendar ${it.title} com ${pro?.name ?? ""}`}
             >
-              <div className="aspect-square w-full overflow-hidden gold-border rounded-sm">
+              <div className="relative aspect-square w-full overflow-hidden gold-border rounded-sm">
                 <img src={it.img} alt={it.title} loading="lazy" width={900} height={900} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute top-3 left-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 backdrop-blur-md border border-primary/40 text-primary shadow-lg">
+                  <it.Icon className="h-5 w-5" />
+                </div>
               </div>
-              <h3 className="mt-6 font-display text-2xl gold-gradient">{it.title}</h3>
+              <h3 className="mt-6 font-display text-2xl gold-gradient flex items-center gap-2">
+                <it.Icon className="h-5 w-5 opacity-70" />
+                {it.title}
+              </h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{it.body}</p>
               <div className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/80 group-hover:text-primary">
                 Agendar <ChevronRight className="h-3 w-3" />
