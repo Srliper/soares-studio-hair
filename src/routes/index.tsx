@@ -22,6 +22,7 @@ import pillarBarberNewAsset from "@/assets/pillar-barber-real.jpg.asset.json";
 import collabAlexiaAsset from "@/assets/pillar-casamentos.png.asset.json";
 import collabAfonsoAsset from "@/assets/pillar-barber.jpg.asset.json";
 import pillarMaquiagemAsset from "@/assets/pillar-maquiagem.jpg.asset.json";
+import studioLogo from "@/assets/studio-soares-logo.png";
 const pillarWedding = pillarWeddingNewAsset.url;
 const pillarBarber = pillarBarberNewAsset.url;
 const afonsoImg = collabAfonsoAsset.url;
