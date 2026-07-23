@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { verifyWebhookRequest } from "@/lib/webhook-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/reminder")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        const apikey = request.headers.get("apikey") ?? request.headers.get("x-api-key");
-        if (!expected || apikey !== expected) return new Response("Unauthorized", { status: 401 });
+        if (!(await verifyWebhookRequest(request))) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         try {
           const url = new URL(request.url);
           const { runReminderJob } = await import("@/lib/reminder-job.server");
