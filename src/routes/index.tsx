@@ -136,7 +136,7 @@ function useBusySlots(professionalId?: string, day?: string) {
           .eq("professional_id", professionalId!)
           .gte("start_at", start.toISOString())
           .lte("start_at", end.toISOString()),
-        supabase.from("time_blocks")
+        supabase.from("time_blocks_public")
           .select("start_at,end_at")
           .eq("professional_id", professionalId!)
           .lte("start_at", end.toISOString())
