@@ -756,7 +756,7 @@ function StepStyle({
     if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5 MB)"); return; }
     setUploading(true);
     const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const path = `pending/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from("appointment-references").upload(path, file, {
       cacheControl: "3600", upsert: false, contentType: file.type,
     });

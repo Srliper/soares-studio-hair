@@ -801,6 +801,27 @@ export type Database = {
           },
         ]
       }
+      webhook_config: {
+        Row: {
+          created_at: string
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wedding_guests: {
         Row: {
           appointment_id: string | null
