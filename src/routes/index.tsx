@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
           description:
             "Studio de beleza em São Miguel Arcanjo — cabelo, barba, unhas, maquiagem e noivas.",
           image: "/favicon.ico",
-          telephone: "+55-15-99834-3669",
+          telephone: ["+55-15-99834-3669", "+55-15-99855-5206"],
           address: {
             "@type": "PostalAddress",
             streetAddress: "R. Cel. Fernando Prestes, 622",
@@ -988,6 +988,13 @@ function Footer() {
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">WhatsApp</span>
             <a href="https://wa.me/5515998343669" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary">
               15 99834 3669
+            </a>
+          </div>
+          <span className="hidden md:block h-4 w-px bg-border" />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">WhatsApp Afonso</span>
+            <a href="https://wa.me/5515998555206" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary">
+              15 99855 5206
             </a>
           </div>
           <span className="hidden md:block h-4 w-px bg-border" />

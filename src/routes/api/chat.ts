@@ -46,7 +46,7 @@ Dados do estúdio:
 - Profissionais: Afonso Soares (cortes masculinos, femininos, mechas, casamentos) e Alexia Soares (manicure, unhas, noivas)
 - Endereço: R. Cel. Fernando Prestes, 622 - Centro, São Miguel Arcanjo, SP
 - Horário: Terça a Sábado, 09:00–19:00
-- WhatsApp: +55 15 99834-3669
+- WhatsApp: +55 15 99834-3669 (principal) / +55 15 99855-5206 (Afonso — alternativo)
 - Instagram: @afonsosoaresstudio (https://instagram.com/afonsosoaresstudio)
 - TikTok: @soareshair (https://www.tiktok.com/@soareshair)
 
