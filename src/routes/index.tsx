@@ -268,7 +268,8 @@ function Header() {
         <div className="text-center">
           <div className="flex flex-col items-center">
             <img src={studioLogo} alt="Studio Soares" className="h-10 md:h-12 w-auto" />
-            <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-1">Hair Afonso &amp; Alexia</div>
+            <div className="font-serif text-sm md:text-base tracking-[0.3em] text-primary mt-1">STUDIO SOARES</div>
+            <div className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-muted-foreground mt-0.5">Hair Afonso &amp; Alexia</div>
           </div>
         </div>
         <div className="flex justify-end items-center gap-4">
