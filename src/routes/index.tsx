@@ -236,14 +236,14 @@ function Home() {
                           _professional_id: pro.id,
                           _service_id: service.id,
                           _service_variant_id: variant?.id ?? null,
-                          _reference_image_url: referencePath,
+                          _reference_image_url: referencePath ?? null,
                           _style_notes: styleNotes.trim() || null,
                           _client_name: name,
                           _client_phone: phone,
                           _client_notes: notes || null,
                           _start_at: start.toISOString(),
                           _end_at: end.toISOString(),
-                        });
+                        } as never);
                         setSubmitting(false);
                         if (error) { toast.error("Não foi possível agendar. Tente outro horário."); return; }
                         setManageToken((token as unknown as string) ?? null);
