@@ -315,13 +315,14 @@ function Pillars({ onPickPro }: { onPickPro: (p: Professional) => void }) {
   const findBySlug = (slug: string) => pros?.find((p) => p.slug === slug);
   const items: { title: string; img: string; body: string; slug: string }[] = [
     { title: "Hair Design", img: pillarHair, body: "Mechas exclusivas, Morena Iluminada e cortes que definem personalidade. O foco do Afonso é elevar a sua autoestima.", slug: "afonso" },
-    { title: "Manicure & Maquiagem", img: pillarNails, body: "Alexia Soares traz delicadeza e precisão para suas unhas — e assina maquiagens social, festa e noiva com o mesmo cuidado.", slug: "alexia" },
+    { title: "Manicure & Nail Design", img: pillarNails, body: "Blindagem, alongamento em fibra ou gel, spa dos pés e nail art assinados por Alexia Soares.", slug: "alexia" },
+    { title: "Maquiagem", img: collabAlexiaAsset.url, body: "Social, festa, madrinha e formatura — makes que valorizam sua expressão com técnica e delicadeza.", slug: "alexia" },
     { title: "Casamentos", img: pillarWedding, body: "O dia da noiva completo — cabelo, maquiagem e cuidado nos detalhes, assinado por Alexia Soares.", slug: "alexia" },
     { title: "Barber", img: pillarBarber, body: "Atendimento premium para o público masculino: cortes clássicos, modernos e barba com a assinatura do Afonso.", slug: "afonso" },
   ];
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24">
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {items.map((it) => {
           const pro = findBySlug(it.slug);
           const disabled = !pro;
