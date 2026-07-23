@@ -992,6 +992,13 @@ function Footer() {
           </div>
           <span className="hidden md:block h-4 w-px bg-border" />
           <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">WhatsApp Afonso</span>
+            <a href="https://wa.me/5515998555206" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary">
+              15 99855 5206
+            </a>
+          </div>
+          <span className="hidden md:block h-4 w-px bg-border" />
+          <div className="flex items-center gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">IG</span>
             <a href="https://instagram.com/afonsosoaresstudio" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline underline-offset-4">
               @afonsosoaresstudio
