@@ -29,6 +29,7 @@ import { WeddingsPanel } from "@/components/admin/WeddingsPanel";
 import { Heart } from "lucide-react";
 import { LoyaltyPanel } from "@/components/admin/LoyaltyPanel";
 import { Sparkles } from "lucide-react";
+import studioSoaresLogo from "@/assets/studio-soares-logo.png";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
@@ -69,9 +70,19 @@ function AdminPage() {
     <div className="min-h-screen">
       <header className="border-b border-border/50 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div>
-            <div className="font-display text-xl gold-gradient">{isAdmin ? "Painel Admin" : "Meu Painel"}</div>
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Ateliê A&A</div>
+          <div className="flex items-center gap-3">
+            <img
+              src={studioSoaresLogo}
+              alt="Studio Soares"
+              width={48}
+              height={48}
+              loading="lazy"
+              className="h-12 w-12 object-contain"
+            />
+            <div>
+              <div className="font-display text-xl gold-gradient">{isAdmin ? "Painel Admin" : "Meu Painel"}</div>
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Studio Soares</div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">Ver site</Link>
