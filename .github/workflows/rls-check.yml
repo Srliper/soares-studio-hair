@@ -76,6 +76,26 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
 
+      - name: Fetch last successful RLS report (for diff)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        continue-on-error: true
+        run: |
+          mkdir -p previous
+          wf="${GITHUB_WORKFLOW// /%20}"
+          run_id=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/rls-check.yml/runs?status=success&branch=${BASE_REF}&per_page=1" \
+            --jq '.workflow_runs[0].id' 2>/dev/null || true)
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "No previous successful run on ${BASE_REF} — skipping baseline."
+            exit 0
+          fi
+          echo "Baseline run: $run_id"
+          gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n rls-report -D previous || \
+            echo "Baseline artifact unavailable (may have expired)."
+
       - name: Run RLS checks and build report
         id: checks
         run: |
@@ -108,6 +128,10 @@ jobs:
           overall=pass
           [ "$s1" = fail ] || [ "$s2" = fail ] || [ "$s3" = fail ] && overall=fail
 
+          PREV_JSON=""
+          [ -f previous/rls-report.json ] && PREV_JSON="previous/rls-report.json"
+          export PREV_JSON
+
           python3 - <<PY
           import json, os, html
           checks = [
@@ -119,6 +143,33 @@ jobs:
             {"id":"permissive_policies","name":"No anon-write / USING(true) mutation policies",
              "status":"${s3}","details":"${bad_policies}".strip() or "None"},
           ]
+
+          prev_path = os.environ.get("PREV_JSON") or ""
+          prev = None
+          if prev_path and os.path.exists(prev_path):
+              try:
+                  with open(prev_path) as f: prev = json.load(f)
+              except Exception: prev = None
+
+          def to_set(details):
+              if not details or details == "None": return set()
+              return {x.strip() for x in details.split(",") if x.strip()}
+
+          diff = {"baseline": None, "checks": []}
+          if prev:
+              diff["baseline"] = {"sha": prev.get("sha",""), "run": prev.get("run",""), "overall": prev.get("overall","")}
+              prev_by_id = {c["id"]: c for c in prev.get("checks", [])}
+              for c in checks:
+                  p = prev_by_id.get(c["id"], {})
+                  cur_items = to_set(c["details"])
+                  prev_items = to_set(p.get("details",""))
+                  diff["checks"].append({
+                      "id": c["id"], "name": c["name"],
+                      "status_change": None if p.get("status") == c["status"] else f'{p.get("status","-")} → {c["status"]}',
+                      "added": sorted(cur_items - prev_items),
+                      "removed": sorted(prev_items - cur_items),
+                  })
+
           report = {
             "overall":"${overall}",
             "repo":os.environ.get("GITHUB_REPOSITORY",""),
@@ -126,6 +177,7 @@ jobs:
             "ref":os.environ.get("GITHUB_REF",""),
             "run":os.environ.get("GITHUB_RUN_ID",""),
             "checks":checks,
+            "diff": diff,
           }
           with open("report/rls-report.json","w") as f: json.dump(report,f,indent=2)
 
@@ -135,6 +187,26 @@ jobs:
             f'<td style="color:{badge[c["status"]]};font-weight:600">{c["status"].upper()}</td>'
             f'<td><code>{html.escape(c["details"])}</code></td></tr>'
             for c in checks)
+
+          if diff["baseline"]:
+              b = diff["baseline"]
+              drows = ""
+              for d in diff["checks"]:
+                  sc = d["status_change"] or "no change"
+                  added = ", ".join(d["added"]) or "—"
+                  removed = ", ".join(d["removed"]) or "—"
+                  drows += (f'<tr><td>{html.escape(d["name"])}</td>'
+                            f'<td>{html.escape(sc)}</td>'
+                            f'<td style="color:#16a34a">+ {html.escape(added)}</td>'
+                            f'<td style="color:#dc2626">− {html.escape(removed)}</td></tr>')
+              diff_html = (f'<h2>Diff vs last successful run</h2>'
+                           f'<p>Baseline commit <code>{html.escape((b["sha"] or "")[:12])}</code> '
+                           f'(run {html.escape(str(b["run"]))}, overall {html.escape(b["overall"])})</p>'
+                           f'<table><thead><tr><th>Check</th><th>Status change</th><th>Added</th><th>Removed</th></tr></thead>'
+                           f'<tbody>{drows}</tbody></table>')
+          else:
+              diff_html = '<h2>Diff vs last successful run</h2><p><i>No baseline available.</i></p>'
+
           h = f"""<!doctype html><meta charset=utf-8>
           <title>RLS Report — {html.escape(report['sha'][:7])}</title>
           <style>body{{font-family:system-ui;margin:2rem;max-width:960px}}
@@ -149,6 +221,7 @@ jobs:
              <b>Run:</b> {html.escape(report['run'])}</p>
           <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
           <tbody>{rows}</tbody></table>
+          {diff_html}
           <p style=color:#6b7280;font-size:.85rem>Allowed SECURITY DEFINER views:
           <code>{html.escape(os.environ['ALLOWED_DEFINER_VIEWS'])}</code></p>"""
           with open("report/rls-report.html","w") as f: f.write(h)
@@ -162,6 +235,13 @@ jobs:
             echo "| RLS enabled | $s1 | ${no_rls:-None} |"
             echo "| SECURITY DEFINER views | $s2 | ${definer_views:-None} |"
             echo "| Permissive policies | $s3 | ${bad_policies:-None} |"
+            if [ -n "$PREV_JSON" ]; then
+              echo ""
+              echo "_Diff vs last successful run included in artifact._"
+            else
+              echo ""
+              echo "_No baseline run available for diff._"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo "overall=$overall" >> "$GITHUB_OUTPUT"
