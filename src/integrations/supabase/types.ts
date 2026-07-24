@@ -355,8 +355,12 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          photo_url: string | null
+          pinned: boolean
+          role_badge: string | null
           role_title: string
           slug: string
+          tiktok_url: string | null
           user_id: string | null
           work_end: string
           work_start: string
@@ -369,8 +373,12 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          photo_url?: string | null
+          pinned?: boolean
+          role_badge?: string | null
           role_title: string
           slug: string
+          tiktok_url?: string | null
           user_id?: string | null
           work_end?: string
           work_start?: string
@@ -383,8 +391,12 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          photo_url?: string | null
+          pinned?: boolean
+          role_badge?: string | null
           role_title?: string
           slug?: string
+          tiktok_url?: string | null
           user_id?: string | null
           work_end?: string
           work_start?: string
