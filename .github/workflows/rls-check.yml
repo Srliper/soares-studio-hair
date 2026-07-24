@@ -266,6 +266,7 @@ jobs:
             '<button id="copy-json" type="button">Copy JSON</button>'
             '<button id="copy-visible" type="button">Copy visible rows</button>'
             '<button id="copy-visible-csv" type="button">Copy visible as CSV</button>'
+            '<button id="export-visible-csv" type="button">Export visible CSV</button>'
             '<span id="count" class="muted"></span>'
             '</div>'
           )
