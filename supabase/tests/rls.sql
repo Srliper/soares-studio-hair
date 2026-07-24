@@ -6,7 +6,7 @@
 
 BEGIN;
 
-SELECT plan(40);
+SELECT plan(46);
 
 -- ---------- 1. RLS is enabled on every sensitive table ----------
 SELECT ok(
