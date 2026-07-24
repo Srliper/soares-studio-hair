@@ -631,6 +631,7 @@ jobs:
           $SUMMARY
 
           - 📦 [Download \`rls-report\` artifact (HTML + JSON)]($ARTIFACT_URL)
+          - 🧪 pgTAP RLS tests: **${{ steps.pgtap.outputs.pgtap_passes }} passed / ${{ steps.pgtap.outputs.pgtap_fails }} failed** (see \`pgtap.tap\` in artifact)
           - 🧾 [Workflow run]($RUN_URL)
           EOF
           )
