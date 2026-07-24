@@ -448,6 +448,51 @@ jobs:
               }
               setTimeout(() => { btn.textContent = original; }, 1500);
             });
+            function buildVisibleCsv(){
+              const visible = rows.filter(el => el.style.display !== 'none');
+              const header = ['kind','category','name','status','status_change','added','removed','details'];
+              const lines = [header.join(',')];
+              visible.forEach(el => {
+                const category = el.getAttribute('data-category') || '';
+                if (el.tagName === 'TR') {
+                  const cells = Array.from(el.children).map(textOf);
+                  if (cells.length === 3) {
+                    lines.push([ 'check', category, cells[0], cells[1], '', '', '', cells[2] ].map(esc).join(','));
+                  } else if (cells.length === 4) {
+                    lines.push([ 'diff', category, cells[0], '', cells[1],
+                                 cells[2].replace(/^\\+\\s*/,''), cells[3].replace(/^[−-]\\s*/,''), '' ].map(esc).join(','));
+                  }
+                  return;
+                }
+                const title = textOf(el.querySelector('h3'));
+                const lists = Array.from(el.querySelectorAll('table ul')).map(ul =>
+                  Array.from(ul.querySelectorAll('li')).map(textOf));
+                const sc = (lists[0] || []).join(' | ');
+                const add = (lists[1] || []).join(' | ');
+                const rem = (lists[2] || []).join(' | ');
+                lines.push([ 'category', category, title, '', sc, add, rem, '' ].map(esc).join(','));
+              });
+              return lines.join('\\n');
+            }
+            document.getElementById('copy-visible-csv').addEventListener('click', async () => {
+              const btn = document.getElementById('copy-visible-csv');
+              const csv = buildVisibleCsv();
+              const original = btn.textContent;
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(csv);
+                } else {
+                  const ta = document.createElement('textarea');
+                  ta.value = csv; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                  document.body.appendChild(ta); ta.select();
+                  document.execCommand('copy'); ta.remove();
+                }
+                btn.textContent = 'Copied!';
+              } catch (e) {
+                btn.textContent = 'Copy failed';
+              }
+              setTimeout(() => { btn.textContent = original; }, 1500);
+            });
           })();
           </script>"""
 
