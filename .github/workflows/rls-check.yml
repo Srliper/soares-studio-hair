@@ -261,9 +261,12 @@ jobs:
             '<label><input type="checkbox" class="catf" value="policies" checked> Policies</label>'
             '<label><input type="checkbox" class="catf" value="security_definer" checked> SECURITY DEFINER</label>'
             '<button id="reset" type="button">Reset</button>'
+            '<button id="export" type="button">Export CSV</button>'
             '<span id="count" class="muted"></span>'
             '</div>'
           )
+          diff_data_json = json.dumps(diff.get("by_category", {}))
+          data_block = f'<script id="diff-data" type="application/json">{diff_data_json}</script>'
           script = """<script>
           (function(){
             const q = document.getElementById('q');
@@ -289,6 +292,53 @@ jobs:
               q.value = ''; boxes.forEach(b => b.checked = true); apply();
             });
             apply();
+
+            const dataEl = document.getElementById('diff-data');
+            const byCat = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
+            const esc = v => {
+              const s = String(v == null ? '' : v);
+              return /[",\\n\\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+            };
+            function buildCsv(){
+              const term = (q.value || '').trim().toLowerCase();
+              const active = new Set(boxes.filter(b => b.checked).map(b => b.value));
+              const lines = [['category','kind','check','item'].join(',')];
+              Object.keys(byCat).forEach(cat => {
+                if (!active.has(cat)) return;
+                const c = byCat[cat] || {};
+                (c.status_changes || []).forEach(x => {
+                  const item = x.change; const check = x.check;
+                  const hay = (cat + ' status_change ' + check + ' ' + item).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  lines.push([cat,'status_change',check,item].map(esc).join(','));
+                });
+                (c.added || []).forEach(x => {
+                  const [check, ...rest] = String(x).split(':');
+                  const item = rest.join(':').trim();
+                  const hay = (cat + ' added ' + x).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  lines.push([cat,'added',check.trim(),item].map(esc).join(','));
+                });
+                (c.removed || []).forEach(x => {
+                  const [check, ...rest] = String(x).split(':');
+                  const item = rest.join(':').trim();
+                  const hay = (cat + ' removed ' + x).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  lines.push([cat,'removed',check.trim(),item].map(esc).join(','));
+                });
+              });
+              return lines.join('\\n');
+            }
+            document.getElementById('export').addEventListener('click', () => {
+              const csv = buildCsv();
+              const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+              a.href = url; a.download = 'rls-changes-' + stamp + '.csv';
+              document.body.appendChild(a); a.click();
+              setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+            });
           })();
           </script>"""
 
@@ -315,6 +365,7 @@ jobs:
           {diff_html}
           <p style=color:#6b7280;font-size:.85rem>Allowed SECURITY DEFINER views:
           <code>{html.escape(os.environ['ALLOWED_DEFINER_VIEWS'])}</code></p>
+          {data_block}
           {script}"""
           with open("report/rls-report.html","w") as f: f.write(h)
           PY
