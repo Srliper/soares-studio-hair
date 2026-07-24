@@ -195,7 +195,9 @@ jobs:
 
           badge = {"pass":"#16a34a","fail":"#dc2626"}
           rows = "".join(
-            f'<tr><td>{html.escape(c["name"])}</td>'
+            f'<tr class="filter-row" data-category="{c["category"]}" '
+            f'data-search="{html.escape(c["name"].lower())} {html.escape(c["details"].lower())}">'
+            f'<td>{html.escape(c["name"])}</td>'
             f'<td style="color:{badge[c["status"]]};font-weight:600">{c["status"].upper()}</td>'
             f'<td><code>{html.escape(c["details"])}</code></td></tr>'
             for c in checks)
@@ -207,7 +209,10 @@ jobs:
                   sc = d["status_change"] or "no change"
                   added = ", ".join(d["added"]) or "—"
                   removed = ", ".join(d["removed"]) or "—"
-                  drows += (f'<tr><td>{html.escape(d["name"])}</td>'
+                  hay = f'{d["name"]} {added} {removed} {sc}'.lower()
+                  drows += (f'<tr class="filter-row" data-category="{d["category"]}" '
+                            f'data-search="{html.escape(hay)}">'
+                            f'<td>{html.escape(d["name"])}</td>'
                             f'<td>{html.escape(sc)}</td>'
                             f'<td style="color:#16a34a">+ {html.escape(added)}</td>'
                             f'<td style="color:#dc2626">− {html.escape(removed)}</td></tr>')
@@ -233,18 +238,59 @@ jobs:
                       for x in c["status_changes"]) or '<li><i>no status changes</i></li>'
                   add_rows = "".join(f'<li style="color:#16a34a">+ {html.escape(x)}</li>' for x in c["added"]) or '<li><i>none</i></li>'
                   rem_rows = "".join(f'<li style="color:#dc2626">− {html.escape(x)}</li>' for x in c["removed"]) or '<li><i>none</i></li>'
-                  cat_html += (f'<h3>{cat_labels[key]}</h3>'
+                  hay = " ".join(c["added"] + c["removed"] + [x["check"] for x in c["status_changes"]]).lower()
+                  cat_html += (f'<section class="filter-row cat-section" data-category="{key}" '
+                               f'data-search="{html.escape(hay)}">'
+                               f'<h3>{cat_labels[key]}</h3>'
                                f'<table><thead><tr><th>Status changes</th><th>Added</th><th>Removed</th></tr></thead>'
                                f'<tbody><tr>'
                                f'<td><ul>{sc_rows}</ul></td>'
                                f'<td><ul>{add_rows}</ul></td>'
                                f'<td><ul>{rem_rows}</ul></td>'
-                               f'</tr></tbody></table>')
+                               f'</tr></tbody></table></section>')
               if not any_cat:
                   cat_html += '<p><i>No changes in any category since the baseline.</i></p>'
               diff_html += cat_html
           else:
               diff_html = '<h2>Diff vs last successful run</h2><p><i>No baseline available.</i></p>'
+
+          toolbar = (
+            '<div class="toolbar">'
+            '<input id="q" type="search" placeholder="Search tables, policies, objects…" />'
+            '<label><input type="checkbox" class="catf" value="tables" checked> Tables</label>'
+            '<label><input type="checkbox" class="catf" value="policies" checked> Policies</label>'
+            '<label><input type="checkbox" class="catf" value="security_definer" checked> SECURITY DEFINER</label>'
+            '<button id="reset" type="button">Reset</button>'
+            '<span id="count" class="muted"></span>'
+            '</div>'
+          )
+          script = """<script>
+          (function(){
+            const q = document.getElementById('q');
+            const boxes = Array.from(document.querySelectorAll('.catf'));
+            const rows = Array.from(document.querySelectorAll('.filter-row'));
+            const count = document.getElementById('count');
+            function apply(){
+              const term = (q.value || '').trim().toLowerCase();
+              const active = new Set(boxes.filter(b => b.checked).map(b => b.value));
+              let shown = 0;
+              rows.forEach(el => {
+                const cat = el.getAttribute('data-category');
+                const hay = el.getAttribute('data-search') || '';
+                const ok = active.has(cat) && (!term || hay.includes(term));
+                el.style.display = ok ? '' : 'none';
+                if (ok) shown++;
+              });
+              count.textContent = shown + ' / ' + rows.length + ' items';
+            }
+            q.addEventListener('input', apply);
+            boxes.forEach(b => b.addEventListener('change', apply));
+            document.getElementById('reset').addEventListener('click', () => {
+              q.value = ''; boxes.forEach(b => b.checked = true); apply();
+            });
+            apply();
+          })();
+          </script>"""
 
           h = f"""<!doctype html><meta charset=utf-8>
           <title>RLS Report — {html.escape(report['sha'][:7])}</title>
@@ -252,17 +298,24 @@ jobs:
           table{{width:100%;border-collapse:collapse;margin-top:1rem}}
           td,th{{padding:.6rem;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}}
           .pill{{display:inline-block;padding:.2rem .6rem;border-radius:999px;color:#fff;background:{badge[report['overall']]}}}
+          .toolbar{{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin:1rem 0;padding:.75rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:.5rem}}
+          .toolbar input[type=search]{{flex:1;min-width:220px;padding:.4rem .6rem;border:1px solid #d1d5db;border-radius:.375rem;font:inherit}}
+          .toolbar label{{font-size:.9rem;display:inline-flex;gap:.25rem;align-items:center}}
+          .toolbar button{{padding:.35rem .75rem;border:1px solid #d1d5db;background:#fff;border-radius:.375rem;cursor:pointer}}
+          .muted{{color:#6b7280;font-size:.85rem;margin-left:auto}}
           </style>
           <h1>RLS & SECURITY DEFINER Report</h1>
           <p>Overall: <span class=pill>{report['overall'].upper()}</span></p>
           <p><b>Repo:</b> {html.escape(report['repo'])} &middot;
              <b>Commit:</b> <code>{html.escape(report['sha'][:12])}</code> &middot;
              <b>Run:</b> {html.escape(report['run'])}</p>
+          {toolbar}
           <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
           <tbody>{rows}</tbody></table>
           {diff_html}
           <p style=color:#6b7280;font-size:.85rem>Allowed SECURITY DEFINER views:
-          <code>{html.escape(os.environ['ALLOWED_DEFINER_VIEWS'])}</code></p>"""
+          <code>{html.escape(os.environ['ALLOWED_DEFINER_VIEWS'])}</code></p>
+          {script}"""
           with open("report/rls-report.html","w") as f: f.write(h)
           PY
 
