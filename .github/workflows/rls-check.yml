@@ -401,6 +401,52 @@ jobs:
               }
               setTimeout(() => { btn.textContent = original; }, 1500);
             });
+            function textOf(el){ return (el ? (el.textContent || '') : '').trim().replace(/\\s+/g,' '); }
+            function buildVisibleJson(){
+              const visible = rows.filter(el => el.style.display !== 'none');
+              const out = visible.map(el => {
+                const category = el.getAttribute('data-category') || '';
+                if (el.tagName === 'TR') {
+                  const cells = Array.from(el.children).map(textOf);
+                  // Check-results row: [name, status, details]
+                  // Diff row:          [name, status_change, added, removed]
+                  if (cells.length === 3) {
+                    return {kind:'check', category, name:cells[0], status:cells[1], details:cells[2]};
+                  }
+                  if (cells.length === 4) {
+                    return {kind:'diff', category, name:cells[0], status_change:cells[1],
+                            added:cells[2].replace(/^\\+\\s*/,''), removed:cells[3].replace(/^[−-]\\s*/,'')};
+                  }
+                  return {kind:'row', category, cells};
+                }
+                // Category section
+                const title = textOf(el.querySelector('h3'));
+                const lists = Array.from(el.querySelectorAll('table ul')).map(ul =>
+                  Array.from(ul.querySelectorAll('li')).map(textOf));
+                return {kind:'category', category, title,
+                        status_changes: lists[0] || [], added: lists[1] || [], removed: lists[2] || []};
+              });
+              return JSON.stringify({generated_at: new Date().toISOString(), count: out.length, rows: out}, null, 2);
+            }
+            document.getElementById('copy-visible').addEventListener('click', async () => {
+              const btn = document.getElementById('copy-visible');
+              const json = buildVisibleJson();
+              const original = btn.textContent;
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(json);
+                } else {
+                  const ta = document.createElement('textarea');
+                  ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                  document.body.appendChild(ta); ta.select();
+                  document.execCommand('copy'); ta.remove();
+                }
+                btn.textContent = 'Copied!';
+              } catch (e) {
+                btn.textContent = 'Copy failed';
+              }
+              setTimeout(() => { btn.textContent = original; }, 1500);
+            });
           })();
           </script>"""
 
