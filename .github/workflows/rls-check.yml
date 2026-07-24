@@ -76,6 +76,46 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
 
+      - name: Install pgTAP into the CI database
+        run: |
+          curl -sSL https://github.com/theory/pgtap/archive/refs/tags/v1.3.3.tar.gz \
+            | tar -xz -C /tmp
+          psql -v ON_ERROR_STOP=1 -f /tmp/pgtap-1.3.3/sql/pgtap.sql >/dev/null
+          echo "pgTAP installed: $(psql -tAc "SELECT pgtap_version()")"
+
+      - name: Run pgTAP RLS policy tests
+        id: pgtap
+        run: |
+          mkdir -p report
+          set -o pipefail
+          if ! psql -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql \
+                | tee report/pgtap.tap; then
+            echo "::error::pgTAP test script failed to execute"
+            echo "pgtap_status=fail" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          fails=$(grep -cE "^\s*not ok" report/pgtap.tap || true)
+          passes=$(grep -cE "^\s*ok " report/pgtap.tap || true)
+          echo "pgTAP: ${passes} passed, ${fails} failed"
+          echo "pgtap_passes=${passes}" >> "$GITHUB_OUTPUT"
+          echo "pgtap_fails=${fails}"   >> "$GITHUB_OUTPUT"
+          if [ "${fails}" -gt 0 ]; then
+            {
+              echo ""
+              echo "### ❌ pgTAP RLS tests failed"
+              echo '```'
+              grep -E "^\s*(not ok|# )" report/pgtap.tap | head -n 50
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "pgtap_status=fail" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "pgtap_status=pass" >> "$GITHUB_OUTPUT"
+          {
+            echo ""
+            echo "### ✅ pgTAP RLS tests: ${passes} assertions passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Fetch last successful RLS report (for diff)
         if: github.event_name == 'pull_request'
         env:
@@ -591,6 +631,7 @@ jobs:
           $SUMMARY
 
           - 📦 [Download \`rls-report\` artifact (HTML + JSON)]($ARTIFACT_URL)
+          - 🧪 pgTAP RLS tests: **${{ steps.pgtap.outputs.pgtap_passes }} passed / ${{ steps.pgtap.outputs.pgtap_fails }} failed** (see \`pgtap.tap\` in artifact)
           - 🧾 [Workflow run]($RUN_URL)
           EOF
           )
