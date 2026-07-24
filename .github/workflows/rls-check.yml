@@ -266,6 +266,7 @@ jobs:
             '<button id="copy-json" type="button">Copy JSON</button>'
             '<button id="copy-visible" type="button">Copy visible rows</button>'
             '<button id="copy-visible-csv" type="button">Copy visible as CSV</button>'
+            '<button id="export-visible-csv" type="button">Export visible CSV</button>'
             '<span id="count" class="muted"></span>'
             '</div>'
           )
@@ -492,6 +493,16 @@ jobs:
                 btn.textContent = 'Copy failed';
               }
               setTimeout(() => { btn.textContent = original; }, 1500);
+            });
+            document.getElementById('export-visible-csv').addEventListener('click', () => {
+              const csv = buildVisibleCsv();
+              const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+              a.href = url; a.download = 'rls-visible-' + stamp + '.csv';
+              document.body.appendChild(a); a.click();
+              setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
             });
           })();
           </script>"""
