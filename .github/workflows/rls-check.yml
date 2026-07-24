@@ -262,6 +262,7 @@ jobs:
             '<label><input type="checkbox" class="catf" value="security_definer" checked> SECURITY DEFINER</label>'
             '<button id="reset" type="button">Reset</button>'
             '<button id="export" type="button">Export CSV</button>'
+            '<button id="export-json" type="button">Export JSON</button>'
             '<span id="count" class="muted"></span>'
             '</div>'
           )
@@ -329,6 +330,36 @@ jobs:
               });
               return lines.join('\\n');
             }
+            function buildJson(){
+              const term = (q.value || '').trim().toLowerCase();
+              const active = new Set(boxes.filter(b => b.checked).map(b => b.value));
+              const out = [];
+              Object.keys(byCat).forEach(cat => {
+                if (!active.has(cat)) return;
+                const c = byCat[cat] || {};
+                (c.status_changes || []).forEach(x => {
+                  const item = x.change; const check = x.check;
+                  const hay = (cat + ' status_change ' + check + ' ' + item).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  out.push({category:cat, kind:'status_change', check, item});
+                });
+                (c.added || []).forEach(x => {
+                  const [check, ...rest] = String(x).split(':');
+                  const item = rest.join(':').trim();
+                  const hay = (cat + ' added ' + x).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  out.push({category:cat, kind:'added', check:check.trim(), item});
+                });
+                (c.removed || []).forEach(x => {
+                  const [check, ...rest] = String(x).split(':');
+                  const item = rest.join(':').trim();
+                  const hay = (cat + ' removed ' + x).toLowerCase();
+                  if (term && !hay.includes(term)) return;
+                  out.push({category:cat, kind:'removed', check:check.trim(), item});
+                });
+              });
+              return JSON.stringify({generated_at: new Date().toISOString(), count: out.length, changes: out}, null, 2);
+            }
             document.getElementById('export').addEventListener('click', () => {
               const csv = buildCsv();
               const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
@@ -336,6 +367,16 @@ jobs:
               const a = document.createElement('a');
               const stamp = new Date().toISOString().replace(/[:.]/g,'-');
               a.href = url; a.download = 'rls-changes-' + stamp + '.csv';
+              document.body.appendChild(a); a.click();
+              setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+            });
+            document.getElementById('export-json').addEventListener('click', () => {
+              const json = buildJson();
+              const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+              a.href = url; a.download = 'rls-changes-' + stamp + '.json';
               document.body.appendChild(a); a.click();
               setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
             });
