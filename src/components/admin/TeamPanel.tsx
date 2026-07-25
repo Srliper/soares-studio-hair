@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Crown, Sparkles, Plus, Edit2, Power, PowerOff, UserPlus, Copy } from "lucide-react";
+import { Crown, Sparkles, Plus, Edit2, Power, PowerOff, UserPlus, Copy, KeyRound, RefreshCw, Ban, MessageCircle, Unlink } from "lucide-react";
 
 type Pro = {
   id: string;
@@ -29,7 +29,7 @@ export function TeamPanel() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Pro | null>(null);
   const [creating, setCreating] = useState(false);
-  const [newCode, setNewCode] = useState<{ name: string; code: string } | null>(null);
+  const [inviteFor, setInviteFor] = useState<Pro | null>(null);
 
   const list = useQuery({
     queryKey: ["team-professionals"],
@@ -68,14 +68,14 @@ export function TeamPanel() {
         pinned: false,
         claim_code: code,
         claim_code_expires_at: new Date(Date.now() + 168 * 3600 * 1000).toISOString(),
-      }).select("name, claim_code").single();
+      }).select("id,name,bio,photo_url,tiktok_url,active,pinned,role_badge,user_id,claim_code,claim_code_expires_at").single();
       if (error) throw error;
-      return data;
+      return data as Pro;
     },
     onSuccess: (data) => {
       setCreating(false);
-      setNewCode({ name: data.name, code: data.claim_code ?? "" });
       qc.invalidateQueries({ queryKey: ["team-professionals"] });
+      setInviteFor(data);
     },
     onError: (e: any) => toast.error(e.message ?? "Falha ao criar"),
   });
@@ -93,6 +93,42 @@ export function TeamPanel() {
     onSuccess: () => { toast.success("Salvo"); setEditing(null); qc.invalidateQueries({ queryKey: ["team-professionals"] }); },
     onError: (e: any) => toast.error(e.message ?? "Falha"),
   });
+
+  const regen = useMutation({
+    mutationFn: async ({ id, hours }: { id: string; hours: 1 | 24 | 168 }) => {
+      const { data, error } = await supabase.rpc("admin_regenerate_claim_code", { _pro_id: id, _hours: hours });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: async () => {
+      toast.success("Novo código gerado");
+      await qc.invalidateQueries({ queryKey: ["team-professionals"] });
+      // refresh the open invite dialog with latest data
+      setInviteFor((prev) => prev);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Falha ao gerar código"),
+  });
+
+  const revoke = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_revoke_claim_code", { _pro_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Código revogado"); qc.invalidateQueries({ queryKey: ["team-professionals"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Falha ao revogar"),
+  });
+
+  const unlink = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_unlink_professional", { _pro_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Vínculo removido"); qc.invalidateQueries({ queryKey: ["team-professionals"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Falha"),
+  });
+
+  // Keep inviteFor in sync with fresh list data (after regen/revoke)
+  const liveInvite = inviteFor ? (list.data ?? []).find((p) => p.id === inviteFor.id) ?? inviteFor : null;
 
   const badge = (b: Pro["role_badge"]) => {
     if (b === "chefe") return <Badge className="bg-primary text-primary-foreground gap-1"><Crown className="h-3 w-3" />Chefe</Badge>;
@@ -135,9 +171,13 @@ export function TeamPanel() {
                         {p.active ? <><PowerOff className="h-3 w-3 mr-1" />Desativar</> : <><Power className="h-3 w-3 mr-1" />Reativar</>}
                       </Button>
                     )}
-                    {p.claim_code && !p.user_id && (
-                      <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(p.claim_code!); toast.success("Código copiado"); }}>
-                        <Copy className="h-3 w-3 mr-1" />Código: <span className="font-mono ml-1">{p.claim_code}</span>
+                    {!p.user_id ? (
+                      <Button size="sm" variant="outline" onClick={() => setInviteFor(p)}>
+                        <KeyRound className="h-3 w-3 mr-1" />Convite
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Remover vínculo da conta de ${p.name}?`)) unlink.mutate(p.id); }}>
+                        <Unlink className="h-3 w-3 mr-1" />Desvincular
                       </Button>
                     )}
                   </div>
@@ -150,7 +190,13 @@ export function TeamPanel() {
 
       <CreateDialog open={creating} onOpenChange={setCreating} onSubmit={(v: any) => create.mutate(v)} pending={create.isPending} />
       <EditDialog pro={editing} onClose={() => setEditing(null)} onSave={(p) => update.mutate(p)} pending={update.isPending} />
-      <NewCodeDialog data={newCode} onClose={() => setNewCode(null)} />
+      <InviteDialog
+        pro={liveInvite}
+        onClose={() => setInviteFor(null)}
+        onRegen={(hours) => liveInvite && regen.mutate({ id: liveInvite.id, hours })}
+        onRevoke={() => liveInvite && revoke.mutate(liveInvite.id)}
+        pending={regen.isPending || revoke.isPending}
+      />
     </div>
   );
 }
@@ -202,18 +248,78 @@ function EditDialog({ pro, onClose, onSave, pending }: { pro: Pro | null; onClos
   );
 }
 
-function NewCodeDialog({ data, onClose }: { data: { name: string; code: string } | null; onClose: () => void }) {
-  if (!data) return null;
+function InviteDialog({
+  pro, onClose, onRegen, onRevoke, pending,
+}: {
+  pro: Pro | null;
+  onClose: () => void;
+  onRegen: (hours: 1 | 24 | 168) => void;
+  onRevoke: () => void;
+  pending: boolean;
+}) {
+  if (!pro) return null;
+  const expiresAt = pro.claim_code_expires_at ? new Date(pro.claim_code_expires_at) : null;
+  const expired = !!expiresAt && expiresAt.getTime() <= Date.now();
+  const active = !!pro.claim_code && !expired;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const message = active
+    ? `Olá ${pro.name}! Você foi convidado(a) para acessar o painel do Studio Soares.\n\n1) Acesse ${origin}/admin\n2) Entre com seu e-mail Google\n3) Cole o código de vínculo: ${pro.claim_code}\n\nO código expira em ${expiresAt?.toLocaleString("pt-BR")}.`
+    : "";
+  const wa = `https://wa.me/?text=${encodeURIComponent(message)}`;
   return (
-    <Dialog open={!!data} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!pro} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Código gerado para {data.name}</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Envie este código para o colaborador entrar em /admin e vincular a conta. Válido por 7 dias.</p>
-        <div className="rounded-md border-2 border-primary/50 bg-primary/10 p-4 text-center">
-          <div className="font-mono text-3xl tracking-widest text-primary">{data.code}</div>
+        <DialogHeader><DialogTitle>Convite de vínculo — {pro.name}</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Compartilhe o código com o(a) colaborador(a). Ele entra em <span className="font-mono">/admin</span> com o Google, cola o código e a conta é vinculada.
+        </p>
+
+        {active ? (
+          <div className="space-y-3">
+            <div className="rounded-md border-2 border-primary/50 bg-primary/10 p-4 text-center">
+              <div className="font-mono text-3xl tracking-widest text-primary break-all">{pro.claim_code}</div>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Expira em {expiresAt?.toLocaleString("pt-BR")}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(pro.claim_code!); toast.success("Código copiado"); }}>
+                <Copy className="h-3 w-3 mr-1" />Copiar código
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(message); toast.success("Mensagem copiada"); }}>
+                <Copy className="h-3 w-3 mr-1" />Copiar mensagem
+              </Button>
+              <a href={wa} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline"><MessageCircle className="h-3 w-3 mr-1" />Enviar no WhatsApp</Button>
+              </a>
+              <Button size="sm" variant="ghost" className="text-destructive" disabled={pending} onClick={onRevoke}>
+                <Ban className="h-3 w-3 mr-1" />Revogar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+            {pro.claim_code ? "Código expirado." : "Nenhum código ativo."} Gere um novo abaixo.
+          </div>
+        )}
+
+        <div className="mt-2 border-t pt-3">
+          <div className="text-xs font-medium mb-2">{active ? "Reenviar / renovar com validade:" : "Gerar novo código com validade:"}</div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" disabled={pending} onClick={() => onRegen(1)}>
+              <RefreshCw className="h-3 w-3 mr-1" />1 hora
+            </Button>
+            <Button size="sm" variant="secondary" disabled={pending} onClick={() => onRegen(24)}>
+              <RefreshCw className="h-3 w-3 mr-1" />24 horas
+            </Button>
+            <Button size="sm" variant="secondary" disabled={pending} onClick={() => onRegen(168)}>
+              <RefreshCw className="h-3 w-3 mr-1" />7 dias
+            </Button>
+          </div>
         </div>
+
         <DialogFooter>
-          <Button onClick={() => { navigator.clipboard.writeText(data.code); onClose(); }}><Copy className="h-4 w-4 mr-1" />Copiar e fechar</Button>
+          <Button variant="ghost" onClick={onClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
