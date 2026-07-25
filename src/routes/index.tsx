@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search, Heart, Hand, Brush, Crown, AlertCircle, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Scissors, Sparkles, Check, ChevronRight, User, Phone, ArrowLeft, Image as ImageIcon, X, Upload, Search, Heart, Hand, Brush, Crown, AlertCircle, RefreshCw, ShieldCheck, Gem } from "lucide-react";
 import { formatPrice, categoryLabel, type ServiceCategory } from "@/lib/format";
 import { toast } from "sonner";
 import heroImg from "@/assets/hero.jpg";
@@ -413,6 +413,7 @@ function Collaborators() {
           role="Hair Designer & Fundador"
           name="Afonso Soares"
           image={afonsoImg}
+          badge={{ label: "Chefe", Icon: Crown }}
           bio="Especialista em colorimetria, mechas e cortes femininos de alto padrão. Também referência em cortes masculinos clássicos e modernos, com anos de carreira dedicados a elevar a autoestima de cada cliente."
           instagram="@afonsosoaresstudio"
           tiktok="@soareshair"
@@ -421,19 +422,35 @@ function Collaborators() {
           role="Nail Designer, Maquiadora & Co-fundadora"
           name="Alexia Soares"
           image={alexiaImg}
+          badge={{ label: "Co-fundadora", Icon: Gem }}
           bio="Manicure especializada em blindagem, alongamento e spa para as mãos. Também maquiadora profissional — social, festa e o dia da noiva completo. Parceira de vida e profissão do Afonso, juntos deram origem ao Studio Soares."
           instagram="@alexiasoareshair"
         />
+      </div>
+
+      <div className="mt-16 flex flex-wrap items-center justify-center gap-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+        <span>Gestão do Studio</span>
+        <span className="h-px w-8 bg-primary/40" />
+        <span className="inline-flex items-center gap-2 rounded-full gold-border bg-card/60 px-4 py-1.5 text-primary">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Luis Fernando · Gestor
+        </span>
       </div>
     </section>
   );
 }
 
-function ProfileCard({ role, name, bio, instagram, tiktok, image }: { role: string; name: string; bio: string; instagram: string; tiktok?: string; image: string }) {
+function ProfileCard({ role, name, bio, instagram, tiktok, image, badge }: { role: string; name: string; bio: string; instagram: string; tiktok?: string; image: string; badge?: { label: string; Icon: React.ComponentType<{ className?: string }> } }) {
   return (
     <div>
-      <div className="aspect-[4/5] w-full overflow-hidden gold-border rounded-sm">
+      <div className="relative aspect-[4/5] w-full overflow-hidden gold-border rounded-sm">
         <img src={image} alt={name} loading="lazy" width={900} height={1125} className="h-full w-full object-cover" />
+        {badge && (
+          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 backdrop-blur px-3 py-1.5 gold-border">
+            <badge.Icon className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[10px] uppercase tracking-[0.3em] text-primary">{badge.label}</span>
+          </div>
+        )}
       </div>
       <div className="mt-6 text-xs uppercase tracking-[0.3em] text-primary/80">{role}</div>
       <h3 className="mt-3 font-display text-3xl gold-gradient">{name}</h3>
