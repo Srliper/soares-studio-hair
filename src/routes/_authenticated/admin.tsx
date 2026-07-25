@@ -54,6 +54,11 @@ function AdminPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const isAdmin = !!access?.isAdmin;
+  const professionalId = access?.professionalId ?? null;
+  const [tab, setTab] = useState<string>(isAdmin ? "appointments" : "services");
+  const [openInviteTick, setOpenInviteTick] = useState(0);
+
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
@@ -62,13 +67,7 @@ function AdminPage() {
   };
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Carregando…</div>;
-
-  const isAdmin = !!access?.isAdmin;
-  const professionalId = access?.professionalId ?? null;
   if (!isAdmin && !professionalId) return <ClaimIdentityScreen onSignOut={signOut} />;
-
-  const [tab, setTab] = useState<string>(isAdmin ? "appointments" : "services");
-  const [openInviteTick, setOpenInviteTick] = useState(0);
 
   return (
     <div className="min-h-screen">
