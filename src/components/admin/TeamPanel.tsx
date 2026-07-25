@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Crown, Sparkles, Plus, Edit2, Power, PowerOff, UserPlus, Copy, KeyRound, RefreshCw, Ban, MessageCircle, Unlink } from "lucide-react";
 
 type Pro = {
@@ -25,11 +25,15 @@ type Pro = {
   claim_code_expires_at: string | null;
 };
 
-export function TeamPanel() {
+export function TeamPanel({ openInviteTick = 0 }: { openInviteTick?: number } = {}) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Pro | null>(null);
   const [creating, setCreating] = useState(false);
   const [inviteFor, setInviteFor] = useState<Pro | null>(null);
+
+  useEffect(() => {
+    if (openInviteTick > 0) setCreating(true);
+  }, [openInviteTick]);
 
   const list = useQuery({
     queryKey: ["team-professionals"],
