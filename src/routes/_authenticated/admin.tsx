@@ -67,6 +67,9 @@ function AdminPage() {
   const professionalId = access?.professionalId ?? null;
   if (!isAdmin && !professionalId) return <ClaimIdentityScreen onSignOut={signOut} />;
 
+  const [tab, setTab] = useState<string>(isAdmin ? "appointments" : "services");
+  const [openInviteTick, setOpenInviteTick] = useState(0);
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-border/50 bg-background/70 backdrop-blur-xl">
@@ -93,7 +96,13 @@ function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <Tabs defaultValue={isAdmin ? "appointments" : "services"}>
+        {isAdmin && (
+          <TeamHighlightCard
+            onInvite={() => { setTab("team"); setOpenInviteTick((n) => n + 1); }}
+            onOpenTeam={() => setTab("team")}
+          />
+        )}
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             {isAdmin && <TabsTrigger value="appointments"><Calendar className="h-4 w-4 mr-1" /> Agendamentos</TabsTrigger>}
             <TabsTrigger value="services"><Edit className="h-4 w-4 mr-1" /> Serviços & Preços</TabsTrigger>
@@ -123,10 +132,58 @@ function AdminPage() {
           {isAdmin && <TabsContent value="weddings"><WeddingsPanel /></TabsContent>}
           {isAdmin && <TabsContent value="loyalty"><LoyaltyPanel /></TabsContent>}
           {isAdmin && <TabsContent value="prelaunch"><PreLaunchPanel /></TabsContent>}
-          {isAdmin && <TabsContent value="team"><TeamPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="team"><TeamPanel openInviteTick={openInviteTick} /></TabsContent>}
         </Tabs>
       </main>
     </div>
+  );
+}
+
+function TeamHighlightCard({ onInvite, onOpenTeam }: { onInvite: () => void; onOpenTeam: () => void }) {
+  const { data } = useQuery({
+    queryKey: ["team-highlight"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("professionals")
+        .select("id, active, user_id, claim_code, claim_code_expires_at");
+      if (error) throw error;
+      const now = Date.now();
+      const total = data?.filter((p) => p.active).length ?? 0;
+      const pending = data?.filter((p) => p.active && !p.user_id).length ?? 0;
+      const activeCodes = data?.filter((p) => !p.user_id && p.claim_code && p.claim_code_expires_at && new Date(p.claim_code_expires_at).getTime() > now).length ?? 0;
+      return { total, pending, activeCodes };
+    },
+  });
+  return (
+    <Card className="mb-6 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/15 text-primary">
+            <UsersRound className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-display text-lg leading-tight">Equipe & Colaboradores</div>
+            <div className="text-xs text-muted-foreground">
+              {data ? (
+                <>
+                  <span className="font-medium text-foreground">{data.total}</span> ativos ·{" "}
+                  <span className={data.pending > 0 ? "text-amber-600 font-medium" : ""}>{data.pending}</span> aguardando vínculo ·{" "}
+                  <span>{data.activeCodes}</span> convite(s) ativo(s)
+                </>
+              ) : "Carregando…"}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onOpenTeam}>
+            <UsersRound className="h-4 w-4 mr-1" /> Gerenciar equipe
+          </Button>
+          <Button size="sm" onClick={onInvite}>
+            <Plus className="h-4 w-4 mr-1" /> Convidar colaborador
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 
