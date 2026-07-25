@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatPrice, formatTime, categoryLabel, type ServiceCategory } from "@/lib/format";
-import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users, Image as ImageIcon, Palette, UsersRound } from "lucide-react";
+import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users, Image as ImageIcon, Palette, UsersRound, ShieldCheck, Crown, Gem } from "lucide-react";
 import { Bell } from "lucide-react";
 import { CustomersPanel } from "@/components/admin/CustomersPanel";
 import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
@@ -86,6 +86,11 @@ function AdminPage() {
               <div className="font-display text-xl gold-gradient">{isAdmin ? "Painel Admin" : "Meu Painel"}</div>
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Studio Soares</div>
             </div>
+            {isAdmin && (
+              <span className="ml-2 inline-flex items-center gap-1.5 rounded-full gold-border bg-primary/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-primary">
+                <ShieldCheck className="h-3.5 w-3.5" /> Gestor
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Link to="/" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">Ver site</Link>
