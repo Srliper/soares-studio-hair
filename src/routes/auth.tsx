@@ -17,6 +17,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [magicLoading, setMagicLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -96,6 +97,29 @@ function AuthPage() {
               {mode === "login" ? "Primeiro acesso? Criar conta" : "Já tem conta? Entrar"}
             </button>
           </form>
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-card px-2 text-muted-foreground">ou receba um link mágico</span></div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={magicLoading}
+            className="w-full border-primary/40 hover:bg-primary/10"
+            onClick={async () => {
+              if (!email) { toast.error("Informe seu email primeiro"); return; }
+              setMagicLoading(true);
+              const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: { emailRedirectTo: `${window.location.origin}/admin` },
+              });
+              setMagicLoading(false);
+              if (error) { toast.error(error.message); return; }
+              toast.success("Link mágico enviado! Verifique seu email.");
+            }}
+          >
+            {magicLoading ? "Enviando…" : "Enviar link mágico por email"}
+          </Button>
         </Card>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Apenas usuários com papel de administrador podem gerenciar o sistema.
