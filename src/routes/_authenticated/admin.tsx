@@ -28,6 +28,7 @@ import { Star } from "lucide-react";
 import { WeddingsPanel } from "@/components/admin/WeddingsPanel";
 import { Heart } from "lucide-react";
 import { LoyaltyPanel } from "@/components/admin/LoyaltyPanel";
+import { TeamPanel } from "@/components/admin/TeamPanel";
 import { Sparkles } from "lucide-react";
 import studioSoaresLogo from "@/assets/studio-soares-logo.png";
 
