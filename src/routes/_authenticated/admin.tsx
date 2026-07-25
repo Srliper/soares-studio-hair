@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatPrice, formatTime, categoryLabel, type ServiceCategory } from "@/lib/format";
-import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users, Image as ImageIcon, Palette } from "lucide-react";
+import { Calendar, Clock, Edit, Plus, Trash2, LogOut, Phone, User, ArrowLeft, ShieldAlert, Users, Image as ImageIcon, Palette, UsersRound } from "lucide-react";
 import { Bell } from "lucide-react";
 import { CustomersPanel } from "@/components/admin/CustomersPanel";
 import { ReengagementPanel } from "@/components/admin/ReengagementPanel";
@@ -108,6 +108,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="weddings"><Heart className="h-4 w-4 mr-1" /> Casamentos</TabsTrigger>}
             {isAdmin && <TabsTrigger value="loyalty"><Sparkles className="h-4 w-4 mr-1" /> Fidelidade</TabsTrigger>}
             {isAdmin && <TabsTrigger value="prelaunch"><Rocket className="h-4 w-4 mr-1" /> Pré-lançamento</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="team"><UsersRound className="h-4 w-4 mr-1" /> Equipe</TabsTrigger>}
           </TabsList>
           {isAdmin && <TabsContent value="appointments"><AppointmentsPanel /></TabsContent>}
           <TabsContent value="services"><ServicesPanel restrictToProfessionalId={isAdmin ? null : professionalId} /></TabsContent>
@@ -122,6 +123,7 @@ function AdminPage() {
           {isAdmin && <TabsContent value="weddings"><WeddingsPanel /></TabsContent>}
           {isAdmin && <TabsContent value="loyalty"><LoyaltyPanel /></TabsContent>}
           {isAdmin && <TabsContent value="prelaunch"><PreLaunchPanel /></TabsContent>}
+          {isAdmin && <TabsContent value="team"><TeamPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>
