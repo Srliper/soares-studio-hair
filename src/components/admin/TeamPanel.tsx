@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { Crown, Sparkles, Plus, Edit2, Power, PowerOff, UserPlus, Copy, KeyRound, RefreshCw, Ban, MessageCircle, Unlink } from "lucide-react";
+import { Crown, Sparkles, Plus, Edit2, Power, PowerOff, UserPlus, Copy, KeyRound, RefreshCw, Ban, MessageCircle, Unlink, ShieldCheck, Gem } from "lucide-react";
 
 type Pro = {
   id: string;
@@ -46,6 +46,21 @@ export function TeamPanel({ openInviteTick = 0 }: { openInviteTick?: number } = 
         .order("name");
       if (error) throw error;
       return (data ?? []) as Pro[];
+    },
+  });
+
+  const managers = useQuery({
+    queryKey: ["team-managers"],
+    queryFn: async () => {
+      const [{ data: roles }, { data: userRes }] = await Promise.all([
+        supabase.from("user_roles").select("user_id").eq("role", "admin"),
+        supabase.auth.getUser(),
+      ]);
+      return {
+        admins: (roles ?? []) as { user_id: string }[],
+        currentEmail: userRes?.user?.email ?? null,
+        currentId: userRes?.user?.id ?? null,
+      };
     },
   });
 
@@ -136,12 +151,38 @@ export function TeamPanel({ openInviteTick = 0 }: { openInviteTick?: number } = 
 
   const badge = (b: Pro["role_badge"]) => {
     if (b === "chefe") return <Badge className="bg-primary text-primary-foreground gap-1"><Crown className="h-3 w-3" />Chefe</Badge>;
-    if (b === "cofundadora") return <Badge className="bg-primary/80 text-primary-foreground gap-1"><Sparkles className="h-3 w-3" />Co-fundadora</Badge>;
+    if (b === "cofundadora") return <Badge className="bg-primary/80 text-primary-foreground gap-1"><Gem className="h-3 w-3" />Co-fundadora</Badge>;
     return null;
   };
 
   return (
     <div className="space-y-6 mt-6">
+      <Card className="p-6 border-primary/40 bg-primary/5">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center gold-border">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-display text-lg">Gestão do Studio</h2>
+            <p className="text-xs text-muted-foreground">Administradores com acesso total ao painel.</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(managers.data?.admins ?? []).map((a) => {
+            const isMe = a.user_id === managers.data?.currentId;
+            return (
+              <Badge key={a.user_id} className="bg-primary text-primary-foreground gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                Gestor{isMe && managers.data?.currentEmail ? ` · ${managers.data.currentEmail}` : ""}
+              </Badge>
+            );
+          })}
+          {managers.data && managers.data.admins.length === 0 && (
+            <div className="text-xs text-muted-foreground">Nenhum gestor cadastrado.</div>
+          )}
+        </div>
+      </Card>
+
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
