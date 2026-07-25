@@ -59,6 +59,8 @@ export function TeamPanel() {
       const code = Math.random().toString(36).slice(2, 10).toUpperCase();
       const { data, error } = await supabase.from("professionals").insert({
         name: input.name.trim(),
+        slug: input.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Math.random().toString(36).slice(2, 6),
+        role_title: "Profissional",
         bio: input.bio.trim() || null,
         photo_url: input.photo_url.trim() || null,
         tiktok_url: input.tiktok_url.trim() || null,
@@ -146,7 +148,7 @@ export function TeamPanel() {
         )}
       </Card>
 
-      <CreateDialog open={creating} onOpenChange={setCreating} onSubmit={(v) => create.mutate(v)} pending={create.isPending} />
+      <CreateDialog open={creating} onOpenChange={setCreating} onSubmit={(v: any) => create.mutate(v)} pending={create.isPending} />
       <EditDialog pro={editing} onClose={() => setEditing(null)} onSave={(p) => update.mutate(p)} pending={update.isPending} />
       <NewCodeDialog data={newCode} onClose={() => setNewCode(null)} />
     </div>
